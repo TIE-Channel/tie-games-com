@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIE-Games - Indie Pixel Art Games</title>
+<meta name="description" content="TIE-Games - Indie game studio creating retro pixel-art arcade games. Home of Evolrace - the endless runner where heroes evolve through 19 levels.">
+<meta name="theme-color" content="#ffffff">
+
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<meta property="og:title" content="TIE-Games">
+<meta property="og:description" content="Indie pixel art games. Creators of Evolrace.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tie-games.com">
+<meta property="og:image" content="https://tie-games.com/og-image.png">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+
+  :root {
+    --red: #b50026;
+    --red-dark: #8a001b;
+    --black: #1a1a1a;
+    --gray: #666666;
+    --gray-light: #999999;
+    --bg: #ffffff;
+  }
+
+  /* HEADER */
+  .header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 2px solid var(--black);
+  }
+  .nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--black);
+  }
+  .logo-text .accent { color: var(--red); }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--black);
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--red); }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px 80px;
+    text-align: center;
+  }
+  .hero-logo {
+    width: 240px;
+    margin-bottom: 32px;
+  }
+  .hero-tag {
+    display: inline-block;
+    padding: 4px 16px;
+    border: 2px solid var(--red);
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: clamp(36px, 7vw, 72px);
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    color: var(--black);
+  }
+  .hero h1 .red { color: var(--red); }
+  .hero p {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: clamp(15px, 2vw, 18px);
+    color: var(--gray);
+    max-width: 580px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 2px solid;
+    background: transparent;
+  }
+  .btn-primary {
+    background: var(--red);
+    border-color: var(--red);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    background: var(--red-dark);
+    border-color: var(--red-dark);
+    transform: translateY(-2px);
+  }
+  .btn-secondary {
+    color: var(--black);
+    border-color: var(--black);
+  }
+  .btn-secondary:hover {
+    background: var(--black);
+    color: var(--bg);
+  }
+
+  /* SECTIONS */
+  section {
+    padding: 100px 24px;
+    position: relative;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-divider {
+    height: 2px;
+    background: var(--black);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--red);
+  }
+  .section-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    color: var(--black);
+  }
+  .section-desc {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 17px;
+    color: var(--gray);
+    max-width: 600px;
+    margin-bottom: 56px;
+    line-height: 1.7;
+  }
+
+  /* GAMES */
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+  }
+  .game-card {
+    position: relative;
+    background: var(--bg);
+    border: 2px solid var(--black);
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .game-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 8px 8px 0 var(--red);
+  }
+  .game-icon-wrap {
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #f5f5f5;
+    position: relative;
+    border-bottom: 2px solid var(--black);
+  }
+  .game-icon-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .game-info {
+    padding: 24px;
+  }
+  .game-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: var(--black);
+  }
+  .game-desc {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: var(--gray);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .game-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .game-tag {
+    font-size: 10px;
+    padding: 4px 10px;
+    background: var(--bg);
+    border: 1px solid var(--black);
+    color: var(--black);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .play-store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--black);
+    color: var(--bg);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+  .play-store-btn:hover { background: var(--red); }
+  .play-store-btn svg { width: 16px; height: 16px; }
+  .play-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border: 1px solid #fff;
+  }
+
+  .game-card.soon { opacity: 0.5; }
+  .soon-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--red);
+    color: var(--bg);
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    z-index: 2;
+  }
+  .question-mark {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 100px;
+    font-weight: 700;
+    color: var(--gray-light);
+  }
+
+  /* ABOUT */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+  .about-text p {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    color: var(--gray);
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .stat {
+    padding: 24px;
+    border: 2px solid var(--black);
+    background: var(--bg);
+    transition: all 0.2s;
+  }
+  .stat:hover {
+    background: var(--black);
+  }
+  .stat:hover .stat-num { color: var(--red); }
+  .stat:hover .stat-label { color: var(--bg); }
+  .stat-num {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--red);
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .stat-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: color 0.2s;
+  }
+  .about-visual {
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 2px solid var(--black);
+    overflow: hidden;
+  }
+  .about-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* CONTACT */
+  .contact-card {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 64px 32px;
+    border: 2px solid var(--black);
+    background: var(--bg);
+    position: relative;
+  }
+  .contact-card::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: -8px;
+    bottom: -8px;
+    border: 2px solid var(--red);
+    z-index: -1;
+  }
+  .contact-card .section-tag { margin-bottom: 16px; }
+  .contact-card h2 { margin-bottom: 16px; }
+  .contact-card p {
+    color: var(--gray);
+    margin-bottom: 24px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+  }
+  .email-link {
+    display: inline-block;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--red);
+    padding: 12px 24px;
+    border: 2px solid var(--red);
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .email-link:hover {
+    background: var(--red);
+    color: var(--bg);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 24px;
+    border-top: 2px solid var(--black);
+    background: var(--bg);
+  }
+  .footer-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-text {
+    font-size: 12px;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .footer-links a {
+    font-size: 12px;
+    color: var(--black);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--red); }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .about-grid { grid-template-columns: 1fr; gap: 40px; }
+    .about-visual { max-width: 320px; margin: 0 auto; }
+    section { padding: 64px 24px; }
+    .hero { padding: 100px 24px 64px; }
+    .hero-logo { width: 130px; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-logo, .hero-tag, .hero h1, .hero p, .hero-actions {
+    opacity: 0;
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+  .hero-tag { animation-delay: 0.1s; }
+  .hero h1 { animation-delay: 0.2s; }
+  .hero p { animation-delay: 0.3s; }
+  .hero-actions { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="/" class="logo-link">
+      <span class="logo-text">TIE<span class="accent">-</span>GAMES</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#games">Games</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-logo">
+    <img src="tie-logo.jpg" alt="TIE-Games logo">
+  </div>
+  <span class="hero-tag">Indie Game Studio</span>
+  <h1>Pixel-perfect<br><span class="red">arcade</span> adventures</h1>
+  <p>We craft retro-inspired games where simple controls hide deep gameplay. Every pixel placed with care, every level designed to challenge and delight.</p>
+  <div class="hero-actions">
+    <a href="#games" class="btn btn-primary">Explore Games</a>
+    <a href="#about" class="btn btn-secondary">About Us</a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section id="games">
+  <div class="container">
+    <span class="section-tag">Our Games</span>
+    <h2 class="section-title">Now Playing</h2>
+    <p class="section-desc">Each game is a focused experience. No microtransactions hidden behind paywalls. No demands on your data. Just gameplay.</p>
+
+    <div class="games-grid">
+
+      <div class="game-card">
+        <div class="game-icon-wrap">
+          <img src="evolrace-icon.png" alt="Evolrace - endless pixel runner">
+        </div>
+        <div class="game-info">
+          <h3 class="game-title">Evolrace</h3>
+          <p class="game-desc">Endless pixel runner with 19 levels and 10 epic boss battles. Evolve your hero from a tiny lizard to a futuristic cyborg.</p>
+          <div class="game-meta">
+            <span class="game-tag">Arcade</span>
+            <span class="game-tag">Endless Runner</span>
+            <span class="game-tag">Pixel Art</span>
+            <span class="game-tag">Free</span>
+          </div>
+          <a href="https://play.google.com/store/apps/details?id=com.tiegames.evolrace" class="play-store-btn">
+            <img src="evolrace-icon.png" alt="Evolrace" class="play-icon">
+            Get on Google Play
+          </a>
+        </div>
+      </div>
+
+      <div class="game-card soon">
+        <span class="soon-badge">Coming Soon</span>
+        <div class="game-icon-wrap" style="display: flex; align-items: center; justify-content: center; background: #f5f5f5;">
+          <span class="question-mark">?</span>
+        </div>
+        <div class="game-info">
+          <h3 class="game-title">Project Two</h3>
+          <p class="game-desc">A new arcade adventure is in development. Stay tuned for more details on our next pixel-art journey.</p>
+          <div class="game-meta">
+            <span class="game-tag">In Development</span>
+            <span class="game-tag">2026</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text">
+        <span class="section-tag">Our Story</span>
+        <h2 class="section-title">Born from love<br>of <span style="color: var(--red);">arcades</span></h2>
+        <p>TIE-Games is an indie studio based in Dresden, Germany. We grew up with classic arcade games - the kind that taught you through play, where one more try always felt within reach.</p>
+        <p>Our games are built around three principles: respect the player's time, keep controls simple, and make every level a memorable moment. No tutorials that won't end. No notifications begging you to come back. Just games worth coming back to.</p>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-num">19</div>
+            <div class="stat-label">Levels</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">10</div>
+            <div class="stat-label">Boss Battles</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Offline Play</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">0</div>
+            <div class="stat-label">Forced Ads</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-visual">
+        <img src="evolrace-icon.png" alt="Evolrace artwork">
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section id="contact">
+  <div class="container">
+    <div class="contact-card">
+      <span class="section-tag">Get in Touch</span>
+      <h2 class="section-title" style="font-size: 36px;">Say Hello</h2>
+      <p>Press inquiries, partnerships, or just want to chat about games?<br>Drop us a line.</p>
+      <a href="mailto:tie.games.info@gmail.com" class="email-link">tie.games.info@gmail.com</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-text">
+      &copy; 2026 TIE-GAMES. All rights reserved.
+    </div>
+    <ul class="footer-links">
+      <li><a href="/privacy.html">Privacy</a></li>
+      <li><a href="mailto:tie.games.info@gmail.com">Email</a></li>
+      <li><a href="https://github.com/tie-channel/evolrace">GitHub</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
