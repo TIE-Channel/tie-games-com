@@ -59,6 +59,17 @@
     align-items: center;
     justify-content: space-between;
   }
+  .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    display: block;
+    object-fit: contain;
+  }
   .logo-text {
     font-size: 16px;
     font-weight: 700;
@@ -465,14 +476,27 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .hero-logo, .hero-tag, .hero h1, .hero p, .hero-actions {
+  @keyframes logoIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .hero-logo {
+    opacity: 0;
+    animation: logoIn 0.9s ease-out forwards, logoPulse 4s ease-in-out 1.5s infinite;
+  }
+  .hero-tag, .hero h1, .hero p, .hero-actions {
     opacity: 0;
     animation: fadeUp 0.6s ease-out forwards;
   }
-  .hero-tag { animation-delay: 0.1s; }
-  .hero h1 { animation-delay: 0.2s; }
-  .hero p { animation-delay: 0.3s; }
-  .hero-actions { animation-delay: 0.4s; }
+  .hero-tag { animation-delay: 0.4s; }
+  .hero h1 { animation-delay: 0.5s; }
+  .hero p { animation-delay: 0.6s; }
+  .hero-actions { animation-delay: 0.7s; }
 </style>
 </head>
 <body>
@@ -480,6 +504,7 @@
 <header class="header">
   <nav class="nav">
     <a href="/" class="logo-link">
+      <img src="tie-logo.jpg" alt="TIE-Games" class="logo-mark">
       <span class="logo-text">TIE<span class="accent">-</span>GAMES</span>
     </a>
     <ul class="nav-links">
