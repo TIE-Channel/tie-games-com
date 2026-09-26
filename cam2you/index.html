@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cam2You - GoPro videos to YouTube | TIE-Games</title>
+<meta name="description" content="Cam2You gets the videos off your GoPro, lets you cut and join them, and uploads them to your YouTube channel.">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="canonical" href="https://tie-games.com/cam2you/">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #b50026; text-decoration: none; border-bottom: 1px solid #b50026; }
+  a:hover { background: #b50026; color: #fff; }
+
+  .header {
+    border-bottom: 2px solid #1a1a1a;
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .nav {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo-text {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #1a1a1a;
+    border: none;
+  }
+  .logo-text:hover { background: transparent; color: #1a1a1a; }
+  .logo-text .accent { color: #b50026; }
+  .back-link {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    border: none;
+  }
+  .back-link:hover { background: transparent; color: #b50026; }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #b50026;
+  }
+  .hero img { width: 88px; height: 88px; object-fit: contain; flex: none; }
+  h1 {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(32px, 6vw, 48px);
+    letter-spacing: 0.05em;
+    color: #1a1a1a;
+    line-height: 1.1;
+  }
+  .tagline { font-size: 18px; color: #333; margin-top: 8px; }
+  h2 {
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    margin-top: 40px;
+    margin-bottom: 16px;
+  }
+  p { margin-bottom: 16px; color: #333; }
+  ul { padding-left: 24px; margin-bottom: 16px; }
+  ul li { margin-bottom: 8px; color: #333; }
+  code { font-family: 'Courier New', monospace; font-size: 14px; background: #f5f5f5; padding: 1px 4px; }
+
+  .note {
+    background: #f5f5f5;
+    border-left: 4px solid #b50026;
+    padding: 16px 20px;
+    margin: 24px 0;
+  }
+  .note p:last-child { margin-bottom: 0; }
+
+  .links { list-style: none; padding: 0; }
+  .links li { margin-bottom: 10px; }
+
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 2px solid #1a1a1a;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    color: #666;
+  }
+  .footer p { color: #666; margin-bottom: 8px; }
+
+  @media (max-width: 520px) {
+    .hero { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="/" class="logo-text">TIE<span class="accent">-</span>GAMES</a>
+    <a href="/" class="back-link">&larr; Back</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<div class="hero">
+  <img src="/tie-logo.jpg" alt="TIE-Games logo">
+  <div>
+    <h1>Cam2You</h1>
+    <p class="tagline">From your GoPro to your YouTube channel, without the busywork.</p>
+  </div>
+</div>
+
+<p>Cam2You gets the videos off your GoPro, lets you cut and join them, and uploads them to your YouTube channel &mdash; as one video or as a playlist. It is made by TIE-Games, an independent studio in Dresden, Germany.</p>
+
+<h2>What it does</h2>
+<ul>
+  <li><strong>Finds your videos</strong> on a GoPro connected by USB, over the camera's Wi-Fi or on your home network, as well as on memory cards, in folders and in your phone's gallery.</li>
+  <li><strong>Previews and cuts</strong>: trim the start and end of each video, or keep several parts of it, frame-exact.</li>
+  <li><strong>Joins videos</strong> into one with a transition of your choice, or uploads them as a playlist in the order you arrange.</li>
+  <li><strong>Suggests names</strong> from where and when the videos were recorded, such as <em>Rovinj, Croatia (August 2026)</em>, using the camera's GPS and a place database built into the app.</li>
+  <li><strong>Uploads reliably</strong>: a queue that resumes after interruptions and waits for YouTube's daily limits.</li>
+</ul>
+<p>Cam2You runs on Windows and Android; an iPhone version is planned.</p>
+
+<h2>How Cam2You uses your Google account</h2>
+<p>To upload, you connect your YouTube channel with Google sign-in. Cam2You asks for access to your YouTube account (<code>https://www.googleapis.com/auth/youtube</code>) and uses it only to:</p>
+<ul>
+  <li>upload the videos you choose, with the title, description and privacy you set;</li>
+  <li>create playlists and add your uploaded videos to them;</li>
+  <li>check whether YouTube has processed each upload, and whether it is public or private;</li>
+  <li>delete a video from YouTube only when you ask for it and confirm it.</li>
+</ul>
+<div class="note">
+  <p>Your videos travel directly from your device to YouTube. TIE-Games runs no servers that receive your videos or your Google data, and Cam2You contains no analytics or advertising. Details are in the <a href="/cam2you/privacy">Privacy Policy</a>.</p>
+</div>
+
+<h2>Links</h2>
+<ul class="links">
+  <li><a href="/cam2you/privacy">Privacy Policy</a></li>
+  <li><a href="/cam2you/terms">Terms of Use</a></li>
+  <li>Contact: <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a></li>
+</ul>
+
+<div class="footer">
+  <p>&copy; 2026 TIE-Games. All rights reserved.</p>
+  <p>Cam2You uses YouTube API Services. GoPro is a trademark of GoPro, Inc.; YouTube is a trademark of Google LLC. Cam2You is not affiliated with, sponsored or endorsed by GoPro or Google.</p>
+</div>
+</main>
+
+</body>
+</html>
