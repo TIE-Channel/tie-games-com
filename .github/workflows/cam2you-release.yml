@@ -95,6 +95,17 @@ jobs:
           }
           exit 0
 
+      # Built from short folders: whisper.cpp's build nests deep paths under
+      # Montage (.ck, see its cargokit.cmake), and cl.exe stops at 260
+      # characters, which D:\a\tie-games-com\tie-games-com\ goes past.
+      - name: Short paths
+        run: |
+          robocopy Montage C:\M /E /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw 'Montage was not copied' }
+          robocopy cam2you C:\C /E /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw 'cam2you was not copied' }
+          exit 0
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -115,14 +126,14 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            Montage/app/build/windows/x64/plugins/*/cargokit_build
+            C:\M\.ck
           key: montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-${{ github.run_id }}
           restore-keys: |
             montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-
             montage-rust-
 
       - name: Montage
-        working-directory: Montage
+        working-directory: C:\M
         run: |
           ./scripts/fetch-ffmpeg.ps1
           . ./scripts/env.ps1
@@ -131,7 +142,7 @@ jobs:
           flutter build windows --release
 
       - name: Cam2You
-        working-directory: cam2you
+        working-directory: C:\C
         env:
           BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
         run: |
@@ -145,18 +156,18 @@ jobs:
           flutter build windows --release $define
 
       - name: Installers
-        working-directory: cam2you
+        working-directory: C:\C
         run: |
           if (-not (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue)) {
             choco install innosetup --no-progress -y
           }
-          dart run tool/build_installer.dart
+          dart run tool/build_installer.dart --montage C:\M\app\build\windows\x64\runner\Release
           Get-ChildItem build/installer/*.exe | Format-Table Name, Length
 
       # The full installer as a user runs it, unattended: Cam2You and Montage
       # installed for this user, both start, both are removed again.
       - name: Install, start, remove
-        working-directory: cam2you/build/installer
+        working-directory: C:\C\build\installer
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -222,7 +233,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Release
-        working-directory: cam2you/build/installer
+        working-directory: C:\C\build\installer
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
