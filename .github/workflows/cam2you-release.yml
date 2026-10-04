@@ -1,0 +1,258 @@
+# Builds Cam2You and Montage for Windows and publishes their installers as a
+# release of this repository, tagged cam2you-v<version>: the Download section
+# of tie-games.com/cam2you links to the newest one, and Cam2You's small web
+# installer downloads from it (cam2you's SPEC §13.1). It runs here, in the
+# site's public repository, where Actions minutes are free; the sources stay
+# private: they are only checked out on the runner.
+#
+# Run it by hand: Actions → Cam2You release → Run workflow. Before a release
+# is made the installer is tried on the runner: installed, both apps started,
+# both removed again.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   SOURCE_TOKEN       a fine-grained personal access token: owner TIE-Channel,
+#                      repositories cam2you and Montage, permission Contents:
+#                      Read-only
+#   BUILD_CONFIG_JSON  cam2you's build_config.json (Google sign-in, its SPEC
+#                      §8.11); without it Cam2You is built without sign-in
+name: Cam2You release
+
+on:
+  workflow_dispatch:
+    inputs:
+      cam2you_ref:
+        description: Cam2You branch, tag or commit
+        default: main
+      montage_ref:
+        description: Montage branch, tag or commit
+        default: main
+      publish:
+        description: Publish the release (else a draft, seen only by those who can edit this repository)
+        type: boolean
+        default: true
+      replace:
+        description: Replace the release of this version if there is one
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cam2you-release
+
+env:
+  FLUTTER_VERSION: 3.47.5
+  # Compiler warnings would quote the private sources in this public log.
+  RUSTFLAGS: -Awarnings
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Secrets
+        env:
+          SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        run: |
+          if (-not $env:SOURCE_TOKEN) { throw 'No SOURCE_TOKEN secret: see the top of .github/workflows/cam2you-release.yml' }
+          if (-not $env:BUILD_CONFIG_JSON) { '::warning::No BUILD_CONFIG_JSON secret: Cam2You is built without Google sign-in' }
+
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/cam2you
+          ref: ${{ inputs.cam2you_ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: cam2you
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/Montage
+          ref: ${{ inputs.montage_ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: Montage
+          persist-credentials: false
+
+      - name: Version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPLACE: ${{ inputs.replace }}
+        run: |
+          $version = (Select-String -Path cam2you/pubspec.yaml -Pattern '^version:\s*([\d.]+)').Matches[0].Groups[1].Value
+          $tag = "cam2you-v$version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "cam2you=$(git -C cam2you rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+          "montage=$(git -C Montage rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0 -and $env:REPLACE -ne 'true') {
+            throw "Cam2You $version is released already: raise the version in cam2you's pubspec.yaml, or tick Replace"
+          }
+          exit 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      # cl, Ninja and CMake for whisper.cpp in Montage's core.
+      - uses: ilammy/msvc-dev-cmd@v1
+      # Speech recognition on the graphics card (whisper.cpp's Vulkan backend):
+      # the SDK only, so the runner has no Vulkan loader of its own, like a PC
+      # without a graphics driver that brings one.
+      - uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          vulkan_version: latest
+          cache: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            Montage/app/build/windows/x64/plugins/*/cargokit_build
+          key: montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-
+            montage-rust-
+
+      - name: Montage
+        working-directory: Montage
+        run: |
+          ./scripts/fetch-ffmpeg.ps1
+          . ./scripts/env.ps1
+          Set-Location app
+          flutter pub get
+          flutter build windows --release
+
+      - name: Cam2You
+        working-directory: cam2you
+        env:
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        run: |
+          $define = $null
+          if ($env:BUILD_CONFIG_JSON) {
+            [IO.File]::WriteAllText("$PWD/build_config.json", $env:BUILD_CONFIG_JSON)
+            $define = '--dart-define-from-file=build_config.json'
+          }
+          flutter pub get
+          dart run tool/fetch_ffmpeg.dart
+          flutter build windows --release $define
+
+      - name: Installers
+        working-directory: cam2you
+        run: |
+          if (-not (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue)) {
+            choco install innosetup --no-progress -y
+          }
+          dart run tool/build_installer.dart
+          Get-ChildItem build/installer/*.exe | Format-Table Name, Length
+
+      # The full installer as a user runs it, unattended: Cam2You and Montage
+      # installed for this user, both start, both are removed again.
+      - name: Install, start, remove
+        working-directory: cam2you/build/installer
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          function WaitFor([scriptblock] $done, [int] $seconds) {
+            for ($i = 0; $i -lt $seconds -and -not (& $done); $i++) { Start-Sleep 1 }
+            return (& $done)
+          }
+          $programs = "$env:LOCALAPPDATA\Programs"
+          $media = Test-Path "$env:WINDIR\System32\mfplat.dll"
+          if (-not $media) {
+            # Windows Server has Media Foundation as a feature; Windows 10 and 11 have it.
+            Install-WindowsFeature Server-Media-Foundation -ErrorAction SilentlyContinue | Out-Null
+            $media = Test-Path "$env:WINDIR\System32\mfplat.dll"
+          }
+          $loader = Test-Path "$env:WINDIR\System32\vulkan-1.dll"
+          "Media Foundation: $media; Windows' own Vulkan loader: $loader"
+
+          $log = "$env:RUNNER_TEMP\setup.log"
+          $setup = Start-Process -Wait -PassThru ".\Cam2You-Setup-$env:VERSION.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log"
+          if ($setup.ExitCode -ne 0) { Get-Content $log -Tail 30; throw "The installer failed: $($setup.ExitCode)" }
+          $cam = "$programs\Cam2You\cam2you.exe"
+          $montage = "$programs\Montage\montage_app.exe"
+          if (-not (Test-Path $cam)) { throw "No $cam" }
+          if (-not (Test-Path "$([Environment]::GetFolderPath('Desktop'))\Cam2You.lnk")) { throw 'No desktop shortcut' }
+
+          if ($media) {
+            if (-not (Test-Path $montage)) { Get-Content $log -Tail 30; throw "No $montage" }
+            $record = "$env:LOCALAPPDATA\Montage\app.json"
+            if (-not (Test-Path $record)) { throw "No $record" }
+            if (-not $loader -and -not (Test-Path "$programs\Montage\vulkan-1.dll")) { throw 'No Vulkan loader for Montage' }
+            # Montage writes its record again once its core is loaded: it starts.
+            Remove-Item $record
+            $p = Start-Process $montage -PassThru
+            $started = WaitFor { Test-Path $record } 90
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            if (-not $started) { throw 'Montage did not start: no app.json after 90 s' }
+            "Montage starts: $(Get-Content $record)"
+          } elseif (-not (Select-String -Path $log -Pattern 'Montage is left out' -Quiet)) {
+            throw 'Montage was neither installed nor left out on purpose'
+          }
+
+          # Cam2You opens its database once it is up.
+          $p = Start-Process $cam -PassThru
+          $started = WaitFor { Get-ChildItem $env:APPDATA -Recurse -Depth 3 -Filter state.sqlite -ErrorAction SilentlyContinue } 90
+          $running = -not $p.HasExited
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $running) { throw "Cam2You stopped by itself: $($p.ExitCode)" }
+          if ($started) { 'Cam2You starts' } else { '::warning::Cam2You runs, but made no database within 90 s' }
+
+          foreach ($app in @("$programs\Cam2You", "$programs\Montage")) {
+            if (-not (Test-Path "$app\unins000.exe")) { continue }
+            Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
+            if (-not (WaitFor { -not (Test-Path "$app\unins000.exe") } 120)) { throw "$app was not removed" }
+          }
+          'Both removed'
+
+      - name: Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setup-logs
+          path: ${{ runner.temp }}/*.log
+          if-no-files-found: ignore
+
+      - name: Release
+        working-directory: cam2you/build/installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          CAM2YOU: ${{ steps.version.outputs.cam2you }}
+          MONTAGE: ${{ steps.version.outputs.montage }}
+          PUBLISH: ${{ inputs.publish }}
+          REPLACE: ${{ inputs.replace }}
+        run: |
+          $files = Get-ChildItem *.exe | Sort-Object Name
+          $sums = $files | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
+          $notes = @(
+            "Cam2You $env:VERSION for Windows 10 and 11, 64-bit.",
+            '',
+            "- **Cam2You-Setup-$env:VERSION.exe**: everything in one — Cam2You, and Montage (ticked; it edits your videos into one film by itself).",
+            "- **Cam2You-Web-Setup-$env:VERSION.exe**: the small one — asks the same, then downloads from this release only what you choose.",
+            "- Cam2You-Only-Setup and Montage-Setup: what the small one downloads.",
+            '',
+            "Built from cam2you $env:CAM2YOU and Montage $env:MONTAGE.",
+            '',
+            '```',
+            ($sums -join "`n"),
+            '```'
+          ) -join "`n"
+          Set-Content -Path notes.md -Value $notes -Encoding utf8NoBOM
+          if ($env:REPLACE -eq 'true') {
+            gh release delete $env:TAG --repo $env:GITHUB_REPOSITORY --cleanup-tag --yes *> $null
+          }
+          $release = @($env:TAG) + $files.Name + @('--repo', $env:GITHUB_REPOSITORY, '--target', $env:GITHUB_SHA,
+            '--title', "Cam2You $env:VERSION", '--notes-file', 'notes.md')
+          if ($env:PUBLISH -ne 'true') { $release += '--draft' }
+          gh release create @release
+          if ($LASTEXITCODE -ne 0) { throw 'The release was not made' }

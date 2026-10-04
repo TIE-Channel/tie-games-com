@@ -1,6 +1,6 @@
 # TIE-Games Website
 
-Static website for tie-games.com - homepage, Evolrace game, privacy policy.
+Static website for tie-games.com - homepage, Evolrace game, privacy policy, Cam2You pages and downloads.
 
 ## Deployment via GitHub Pages
 
@@ -72,3 +72,14 @@ https://tie-games.com/privacy.html
 ```
 
 This replaces the previous github.io URL.
+
+## Cam2You downloads
+
+The Download section of `cam2you/index.html` links to the newest release of this repository tagged `cam2you-v<version>` (read from GitHub's API in the browser), so a new release needs no change to the page. Cam2You's small web installer downloads from the release of its version.
+
+Releases are built by `.github/workflows/cam2you-release.yml`: Actions -> Cam2You release -> Run workflow (Cam2You and Montage branches; Publish, or a draft). It builds both apps for Windows, makes the four installers, tries the full one on the runner (install, start both apps, remove) and publishes the release. Raise the version in cam2you's `pubspec.yaml` before each release.
+
+It needs two repository secrets (Settings -> Secrets and variables -> Actions):
+
+- `SOURCE_TOKEN`: a fine-grained personal access token with read access to the contents of TIE-Channel/cam2you and TIE-Channel/Montage (both private)
+- `BUILD_CONFIG_JSON`: the contents of cam2you's `build_config.json` (Google sign-in)
