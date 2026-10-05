@@ -11,6 +11,12 @@
 # (installed and started). Montage's APK is left out of a release when its
 # build fails; everything else must succeed.
 #
+# Linux, macOS and iOS are built by workflows of their own (build-linux.yml,
+# build-macos.yml, build-ios.yml), called from here. Each uploads its files as
+# an artifact named dist-<platform> and a line or two for the release notes as
+# notes-<platform>. Platforms leaves some out, for a quicker try; Release
+# "none" builds and tries without making a release.
+#
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   SOURCE_TOKEN       a fine-grained personal access token: owner TIE-Channel,
 #                      repositories cam2you and Montage, permission Contents:
@@ -33,20 +39,25 @@ on:
       montage_ref:
         description: Montage branch, tag or commit
         default: main
-      publish:
-        description: Publish the release (else a draft, seen only by those who can edit this repository)
-        type: boolean
-        default: true
+      release:
+        description: Publish the release, make a draft (seen only by those who can edit this repository), or none (only build and try)
+        type: choice
+        options: [publish, draft, none]
+        default: publish
       replace:
         description: Replace the release of this version if there is one
         type: boolean
         default: false
+      platforms:
+        description: Which to build
+        default: windows,android,linux,macos,ios
 
 permissions:
   contents: write
 
+# Releases one at a time; tries side by side.
 concurrency:
-  group: cam2you-release
+  group: cam2you-release-${{ inputs.release == 'none' && github.run_id || 'release' }}
 
 env:
   FLUTTER_VERSION: 3.47.5
@@ -70,7 +81,7 @@ jobs:
           SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
           BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
           ANDROID_SIGNING: ${{ secrets.ANDROID_SIGNING }}
-          PUBLISH: ${{ inputs.publish }}
+          PUBLISH: ${{ inputs.release == 'publish' }}
         run: |
           if [ -z "$SOURCE_TOKEN" ]; then
             echo '::error::No SOURCE_TOKEN secret: see the top of .github/workflows/cam2you-release.yml'; exit 1
@@ -105,6 +116,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPLACE: ${{ inputs.replace }}
+          RELEASE: ${{ inputs.release }}
         run: |
           version=$(grep -oP '^version:\s*\K[\d.]+' cam2you/pubspec.yaml)
           tag="cam2you-v$version"
@@ -115,12 +127,13 @@ jobs:
             echo "cam2you=$(git -C cam2you rev-parse HEAD)"
             echo "montage=$(git -C Montage rev-parse HEAD)"
           } >> "$GITHUB_OUTPUT"
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && [ "$REPLACE" != true ]; then
+          if [ "$RELEASE" != none ] && gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && [ "$REPLACE" != true ]; then
             echo "::error::Cam2You $version is released already: raise the version in cam2you's pubspec.yaml, or tick Replace"; exit 1
           fi
 
   windows:
     needs: prepare
+    if: contains(inputs.platforms, 'windows')
     runs-on: windows-latest
     timeout-minutes: 240
     defaults:
@@ -281,7 +294,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: dist-windows
           path: C:\C\build\installer\*.exe
           if-no-files-found: error
 
@@ -290,6 +303,7 @@ jobs:
   # and started on an Android 14 emulator.
   android:
     needs: prepare
+    if: contains(inputs.platforms, 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -391,7 +405,7 @@ jobs:
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: android
+          name: dist-android
           path: dist/*.apk
           if-no-files-found: error
 
@@ -401,6 +415,7 @@ jobs:
   # does in Windows.
   montage-android:
     needs: prepare
+    if: contains(inputs.platforms, 'android')
     runs-on: ubuntu-latest
     timeout-minutes: 180
     continue-on-error: true
@@ -478,29 +493,67 @@ jobs:
           ls -l ../../dist
       - uses: actions/upload-artifact@v4
         with:
-          name: montage-android
+          name: dist-montage-android
           path: dist/*.apk
           if-no-files-found: error
 
+  linux:
+    needs: prepare
+    if: contains(inputs.platforms, 'linux')
+    uses: ./.github/workflows/build-linux.yml
+    secrets: inherit
+    with:
+      cam2you: ${{ needs.prepare.outputs.cam2you }}
+      montage: ${{ needs.prepare.outputs.montage }}
+      version: ${{ needs.prepare.outputs.version }}
+      montage_version: ${{ needs.prepare.outputs.montage_version }}
+
+  macos:
+    needs: prepare
+    if: contains(inputs.platforms, 'macos')
+    uses: ./.github/workflows/build-macos.yml
+    secrets: inherit
+    with:
+      cam2you: ${{ needs.prepare.outputs.cam2you }}
+      montage: ${{ needs.prepare.outputs.montage }}
+      version: ${{ needs.prepare.outputs.version }}
+      montage_version: ${{ needs.prepare.outputs.montage_version }}
+
+  ios:
+    needs: prepare
+    if: contains(inputs.platforms, 'ios')
+    uses: ./.github/workflows/build-ios.yml
+    secrets: inherit
+    with:
+      cam2you: ${{ needs.prepare.outputs.cam2you }}
+      montage: ${{ needs.prepare.outputs.montage }}
+      version: ${{ needs.prepare.outputs.version }}
+      montage_version: ${{ needs.prepare.outputs.montage_version }}
+
+  # Every platform built must have succeeded (one left out by Platforms is
+  # skipped); Montage for Android may have failed.
   release:
-    needs: [prepare, windows, android, montage-android]
-    if: ${{ always() && needs.prepare.result == 'success' && needs.windows.result == 'success' && needs.android.result == 'success' }}
+    needs: [prepare, windows, android, montage-android, linux, macos, ios]
+    if: >-
+      ${{ always() && inputs.release != 'none' && needs.prepare.result == 'success'
+      && contains(fromJSON('["success", "skipped"]'), needs.windows.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.android.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.linux.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.macos.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.ios.result) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: windows
+          pattern: dist-*
+          merge-multiple: true
           path: dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: android
-          path: dist
-      # Montage's APK goes in when its build made one.
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: montage-android
-          path: dist
+          pattern: notes-*
+          merge-multiple: true
+          path: notes
 
       - name: Release
         working-directory: dist
@@ -511,33 +564,42 @@ jobs:
           MONTAGE_VERSION: ${{ needs.prepare.outputs.montage_version }}
           CAM2YOU: ${{ needs.prepare.outputs.cam2you }}
           MONTAGE: ${{ needs.prepare.outputs.montage }}
-          PUBLISH: ${{ inputs.publish }}
+          PUBLISH: ${{ inputs.release == 'publish' }}
           REPLACE: ${{ inputs.replace }}
         run: |
           montage_apk="Montage-$MONTAGE_VERSION.apk"
           {
             echo "Cam2You $VERSION."
             echo
-            echo '**Windows** 10 and 11, 64-bit:'
-            echo
-            echo "- **Cam2You-Setup-$VERSION.exe**: everything in one — Cam2You, and Montage (ticked; it edits your videos into one film by itself)."
-            echo "- **Cam2You-Web-Setup-$VERSION.exe**: the small one — asks the same, then downloads from this release only what you choose."
-            echo '- Cam2You-Only-Setup and Montage-Setup: what the small one downloads.'
-            echo
-            echo '**Android** 10 or newer:'
-            echo
-            echo "- **Cam2You-$VERSION.apk**: open it on the phone to install Cam2You (the first time, Android asks you to allow your browser to install apps)."
-            if [ -f "$montage_apk" ]; then
-              echo "- **$montage_apk**: Montage, for Auto-edit on the phone (64-bit ARM phones)."
+            if [ -f "Cam2You-Setup-$VERSION.exe" ]; then
+              echo '**Windows** 10 and 11, 64-bit:'
+              echo
+              echo "- **Cam2You-Setup-$VERSION.exe**: everything in one — Cam2You, and Montage (ticked; it edits your videos into one film by itself)."
+              echo "- **Cam2You-Web-Setup-$VERSION.exe**: the small one — asks the same, then downloads from this release only what you choose."
+              echo '- Cam2You-Only-Setup and Montage-Setup: what the small one downloads.'
+              echo
             fi
-            echo
+            if [ -f "Cam2You-$VERSION.apk" ]; then
+              echo '**Android** 10 or newer:'
+              echo
+              echo "- **Cam2You-$VERSION.apk**: open it on the phone to install Cam2You (the first time, Android asks you to allow your browser to install apps)."
+              if [ -f "$montage_apk" ]; then
+                echo "- **$montage_apk**: Montage, for Auto-edit on the phone (64-bit ARM phones)."
+              fi
+              echo
+            fi
+            # The other platforms' own lines, in their order (3-linux.md, 4-macos.md, …).
+            for notes in $(ls ../notes/*.md 2>/dev/null | sort); do
+              cat "$notes"
+              echo
+            done
             echo "Built from cam2you ${CAM2YOU:0:7} and Montage ${MONTAGE:0:7}."
             echo
             echo '```'
             sha256sum -- * | sort -k2
             echo '```'
           } > ../notes.md
-          if [ ! -f "$montage_apk" ]; then
+          if [ -f "Cam2You-$VERSION.apk" ] && [ ! -f "$montage_apk" ]; then
             echo "::warning::Montage's Android build failed: the release has no $montage_apk"
           fi
           if [ "$REPLACE" = true ]; then

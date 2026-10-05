@@ -1,0 +1,36 @@
+# Cam2You for iOS, called by cam2you-release.yml: builds from the commits
+# it is given, tries what it built, and uploads the files for the release as
+# the artifact dist-ios, with their lines for the release notes as
+# notes-ios (a Markdown file).
+name: Build iOS
+
+on:
+  workflow_call:
+    inputs:
+      cam2you:
+        description: cam2you commit
+        type: string
+        required: true
+      montage:
+        description: Montage commit
+        type: string
+        required: true
+      version:
+        description: Cam2You's version
+        type: string
+        required: true
+      montage_version:
+        description: Montage's version
+        type: string
+        required: true
+
+env:
+  FLUTTER_VERSION: 3.47.5
+  # Compiler warnings would quote the private sources in this public log.
+  RUSTFLAGS: -Awarnings
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "::warning::Cam2You for iOS is not built yet"
