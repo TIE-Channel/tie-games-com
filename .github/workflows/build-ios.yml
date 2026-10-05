@@ -2,6 +2,15 @@
 # it is given, tries what it built, and uploads the files for the release as
 # the artifact dist-ios, with their lines for the release notes as
 # notes-ios (a Markdown file).
+#
+# First a build for the simulator is installed and started on an iPhone
+# simulator: it must still run after 40 s, with its database made and its
+# self-check passed (keychain, database, and two clips joined by the
+# AVFoundation renderer); a screenshot and the self-check are the artifact
+# ios-test. Then the release build for iPhones, packed as
+# Cam2You-<version>-unsigned.ipa: an iPhone installs only signed apps, so
+# installing it needs the Apple Developer Program (TestFlight, the App Store)
+# or a sideloading tool that signs it with the user's own Apple ID.
 name: Build iOS
 
 on:
@@ -31,6 +40,127 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
-      - run: echo "::warning::Cam2You for iOS is not built yet"
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/cam2you
+          ref: ${{ inputs.cam2you }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: cam2you
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun simctl list runtimes
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build config
+        env:
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        working-directory: cam2you
+        run: |
+          if [ -n "$BUILD_CONFIG_JSON" ]; then
+            printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
+            echo 'DEFINE=--dart-define-from-file=build_config.json' >> "$GITHUB_ENV"
+          fi
+          flutter pub get
+
+      - name: Cam2You for the simulator
+        working-directory: cam2you
+        run: flutter build ios --simulator --debug ${DEFINE:-}
+
+      - name: Start on an iPhone simulator
+        run: |
+          set -euo pipefail
+          mkdir -p test
+          device=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          best = None
+          for runtime, devices in json.load(sys.stdin)["devices"].items():
+              if ".iOS-" not in runtime:
+                  continue
+              version = tuple(int(x) for x in runtime.split(".iOS-")[1].split("-"))
+              for d in devices:
+                  if d["name"].startswith("iPhone") and (best is None or version > best[0]):
+                      best = (version, d["udid"], d["name"])
+          print(best[1])
+          sys.stderr.write("%s, iOS %s\n" % (best[2], ".".join(map(str, best[0]))))
+          ')
+          xcrun simctl boot "$device"
+          xcrun simctl bootstatus "$device" -b > /dev/null
+          xcrun simctl install "$device" cam2you/build/ios/iphonesimulator/Cam2You.app
+          data=$(xcrun simctl get_app_container "$device" com.tiegames.cam2you data)
+          support="$data/Library/Application Support"
+          mkdir -p "$support/SelfCheck"
+          xcrun swift cam2you/tool/make_test_clips.swift "$support/SelfCheck"
+
+          SIMCTL_CHILD_CAM2YOU_SELF_CHECK=1 xcrun simctl launch --stdout="$PWD/test/cam2you-ios.log" \
+            --stderr="$PWD/test/cam2you-ios.log" "$device" com.tiegames.cam2you
+          for i in $(seq 1 120); do
+            if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
+            sleep 1
+          done
+          xcrun simctl io "$device" screenshot test/cam2you-ios.png > /dev/null || echo '::warning::No screenshot'
+          running=$(xcrun simctl spawn "$device" launchctl list | grep 'UIKitApplication:com.tiegames.cam2you' | awk '{print $1}' || true)
+          cp "$support/self-check.json" test/ 2> /dev/null || true
+          tail -20 test/cam2you-ios.log || true
+          if [ -z "$running" ] || [ "$running" = - ]; then echo '::error::Cam2You is not running 40 s after it was started'; exit 1; fi
+          if [ ! -f "$support/state.sqlite" ]; then echo '::error::Cam2You made no database'; exit 1; fi
+          if [ ! -f test/self-check.json ]; then echo '::error::Cam2You wrote no self-check'; exit 1; fi
+          cat test/self-check.json
+          python3 - <<'PY'
+          import json, sys
+          check = json.load(open('test/self-check.json'))
+          failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
+          for name in ('storage', 'database', 'render'):
+              if name not in check:
+                  failed.append(name + ' (not checked)')
+          if failed:
+              print('::error::Cam2You self-check failed: ' + ', '.join(failed))
+              sys.exit(1)
+          print('Cam2You starts on the iPhone simulator: keychain, database and a video joined by AVFoundation')
+          PY
+          xcrun simctl shutdown "$device" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test
+          path: test/
+          if-no-files-found: ignore
+
+      - name: Cam2You for iPhones (unsigned)
+        working-directory: cam2you
+        run: |
+          flutter build ios --release --no-codesign ${DEFINE:-}
+          mkdir -p ../ipa/Payload ../dist
+          ditto build/ios/iphoneos/Cam2You.app ../ipa/Payload/Cam2You.app
+          (cd ../ipa && zip -qry "../dist/Cam2You-$VERSION-unsigned.ipa" Payload)
+          ls -l ../dist
+
+      - name: Notes
+        run: |
+          mkdir -p notes
+          {
+            echo '**iPhone** (iOS 15 or newer):'
+            echo
+            echo "- **Cam2You-$VERSION-unsigned.ipa**: Cam2You for iPhones, built and tried on the iPhone simulator but not signed. An iPhone installs only apps signed through Apple, so it can't be installed as it is: that needs TestFlight or the App Store (the Apple Developer Program), or a sideloading tool (such as AltStore or Sideloadly) that signs it with your own Apple ID — with a free Apple ID such an install runs for 7 days."
+          } > notes/5-ios.md
+          cat notes/5-ios.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes-ios
+          path: notes/5-ios.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-ios
+          path: dist/*.ipa
+          if-no-files-found: error

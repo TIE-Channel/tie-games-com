@@ -2,6 +2,27 @@
 # it is given, tries what it built, and uploads the files for the release as
 # the artifact dist-macos, with their lines for the release notes as
 # notes-macos (a Markdown file).
+#
+# Cam2You-<version>.dmg holds Cam2You.app (one app for Apple silicon and
+# Intel Macs, macOS 12 or newer) and a link to Applications; Cam2You's own
+# updates replace the installed app with the one in it. The app carries an
+# LGPL FFmpeg built here from source with Apple's VideoToolbox encoders
+# (cam2you's tool/build_ffmpeg_macos.sh; kept in the cache while that script
+# is the same). Before the upload the disk image is opened, the app copied out
+# and started: it must still run after 40 s, with its database made and its
+# self-check passed (keychain, database, FFmpeg and its encoders, a video
+# joined with a crossfade); a screenshot and the self-check are the artifact
+# macos-test.
+#
+# Signing: without secrets the app is signed ad hoc (it runs; macOS asks the
+# user once to open it anyway). Optional repository secrets for a Developer ID
+# signature and notarization (Apple Developer Program):
+#   APPLE_CERTIFICATE           the "Developer ID Application" certificate with
+#                               its private key, a .p12 file in base64
+#   APPLE_CERTIFICATE_PASSWORD  its password
+#   APPLE_ID, APPLE_TEAM_ID, APPLE_APP_PASSWORD
+#                               the Apple ID, team and an app-specific password
+#                               for notarization
 name: Build macOS
 
 on:
@@ -31,6 +52,169 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
-      - run: echo "::warning::Cam2You for macOS is not built yet"
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/cam2you
+          ref: ${{ inputs.cam2you }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: cam2you
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sw_vers
+          xcodebuild -version
+          uname -m
+
+      - uses: actions/cache@v4
+        id: ffmpeg
+        with:
+          path: cam2you/third_party/ffmpeg-macos
+          key: cam2you-ffmpeg-macos-${{ hashFiles('cam2you/tool/build_ffmpeg_macos.sh') }}
+      - name: FFmpeg for macOS (LGPL, VideoToolbox)
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        working-directory: cam2you
+        run: |
+          brew install nasm > /dev/null
+          WORK="$RUNNER_TEMP/ffmpeg" bash tool/build_ffmpeg_macos.sh third_party/ffmpeg-macos
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Cam2You
+        working-directory: cam2you
+        env:
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        run: |
+          define=()
+          if [ -n "$BUILD_CONFIG_JSON" ]; then
+            printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
+            define=(--dart-define-from-file=build_config.json)
+          fi
+          flutter pub get
+          flutter build macos --release ${define[@]+"${define[@]}"}
+
+      # A Developer ID signature when the secrets are there (see the top).
+      - name: Signing identity
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo 'Signed ad hoc: no APPLE_CERTIFICATE secret'
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security import "$RUNNER_TEMP/developer-id.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain" > /dev/null
+          rm "$RUNNER_TEMP/developer-id.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          identity=$(security find-identity -v -p codesigning "$keychain" | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')
+          if [ -z "$identity" ]; then echo '::error::APPLE_CERTIFICATE holds no Developer ID Application identity'; exit 1; fi
+          echo "APPLE_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+
+      - name: Disk image
+        working-directory: cam2you
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: bash tool/package_macos.sh "$VERSION" third_party/ffmpeg-macos ../dist
+
+      # As a user does it: the disk image opened, Cam2You copied out of it and
+      # started (with clips for its self-check to join).
+      - name: Open the disk image, start Cam2You
+        run: |
+          set -euo pipefail
+          mkdir -p test
+          mount=$(hdiutil attach -nobrowse -readonly "dist/Cam2You-$VERSION.dmg" | grep -o '/Volumes/.*$' | tail -1)
+          ls -la "$mount"
+          if [ ! -d "$mount/Cam2You.app" ] || [ ! -L "$mount/Applications" ]; then
+            echo '::error::The disk image must hold Cam2You.app and a link to Applications'; exit 1
+          fi
+          apps="$RUNNER_TEMP/Applications"
+          mkdir -p "$apps"
+          ditto "$mount/Cam2You.app" "$apps/Cam2You.app"
+          hdiutil detach "$mount" -quiet
+          app="$apps/Cam2You.app"
+          codesign --verify --deep --strict "$app"
+          lipo -archs "$app/Contents/MacOS/Cam2You"
+          ls -l "$app/Contents/Helpers/ffmpeg" || true
+
+          support="$HOME/Library/Application Support/com.tiegames.cam2you"
+          mkdir -p "$support/SelfCheck"
+          xcrun swift cam2you/tool/make_test_clips.swift "$support/SelfCheck"
+
+          CAM2YOU_SELF_CHECK=1 "$app/Contents/MacOS/Cam2You" > test/cam2you-macos.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 120); do
+            if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
+            kill -0 "$pid" 2> /dev/null || break
+            sleep 1
+          done
+          screencapture -x test/cam2you-macos.png || echo '::warning::No screenshot'
+          running=true
+          kill -0 "$pid" 2> /dev/null || running=false
+          kill "$pid" 2> /dev/null || true
+          cp "$support/self-check.json" test/ 2> /dev/null || true
+          tail -20 test/cam2you-macos.log
+          if [ "$running" != true ]; then echo '::error::Cam2You stopped by itself'; exit 1; fi
+          if [ ! -f "$support/state.sqlite" ]; then echo '::error::Cam2You made no database'; exit 1; fi
+          if [ ! -f test/self-check.json ]; then echo '::error::Cam2You wrote no self-check'; exit 1; fi
+          cat test/self-check.json
+          python3 - <<'PY'
+          import json, sys
+          check = json.load(open('test/self-check.json'))
+          failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
+          for name in ('storage', 'database', 'ffmpeg', 'render'):
+              if name not in check:
+                  failed.append(name + ' (not checked)')
+          if failed:
+              print('::error::Cam2You self-check failed: ' + ', '.join(failed))
+              sys.exit(1)
+          f = check['ffmpeg']
+          print('Cam2You starts on macOS: keychain, database, FFmpeg (%s, %s) and a joined video' % (f['h264'], f['hevc']))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-test
+          path: test/
+          if-no-files-found: ignore
+
+      - name: Notes
+        run: |
+          mkdir -p notes
+          if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
+            open='open it and drag Cam2You into Applications.'
+          else
+            open="open it and drag Cam2You into Applications. It isn't notarized by Apple yet, so the first time you start it macOS says it can't check it: click **Done**, open **System Settings → Privacy & Security**, and next to *\"Cam2You\" was blocked* click **Open Anyway** (on macOS 14 and older, Control-click Cam2You in Applications and choose **Open**)."
+          fi
+          {
+            echo '**macOS** 12 or newer, Apple silicon and Intel:'
+            echo
+            echo "- **Cam2You-$VERSION.dmg**: $open"
+          } > notes/4-macos.md
+          cat notes/4-macos.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes-macos
+          path: notes/4-macos.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-macos
+          path: dist/*.dmg
+          if-no-files-found: error
