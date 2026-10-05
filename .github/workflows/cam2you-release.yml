@@ -5,6 +5,11 @@
 # site's public repository, where Actions minutes are free; the sources stay
 # private: they are only checked out on the runners.
 #
+# The release also gets update.json, every desktop file with its SHA-256,
+# signed with the key in UPDATE_SIGNING_KEY (update.json.minisig, made by
+# .github/scripts/update-manifest.py): the desktop apps update themselves from
+# it, as the Android app does from the APKs.
+#
 # Run it by hand: Actions → Cam2You release → Run workflow. Before a release
 # is made the Windows installer is tried on its runner (installed, both apps
 # started, both removed again) and Cam2You's APK on an Android emulator
@@ -28,6 +33,13 @@
 #                      version must be signed with it, or Android won't
 #                      install it over the last one. A draft can do without
 #                      (a throwaway key, not to be installed over a release).
+#   UPDATE_SIGNING_KEY the key that signs update.json, which the desktop apps
+#                      update themselves from (cam2you's SPEC §13.1): an
+#                      unencrypted minisign secret key (minisign -G -W), the
+#                      key file's text. The apps trust only its public half
+#                      (and a backup's). A published release needs it; a
+#                      draft without it gets an unsigned update.json, which
+#                      the apps refuse.
 name: Cam2You release
 
 on:
@@ -81,7 +93,9 @@ jobs:
           SOURCE_TOKEN: ${{ secrets.SOURCE_TOKEN }}
           BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
           ANDROID_SIGNING: ${{ secrets.ANDROID_SIGNING }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
           PUBLISH: ${{ inputs.release == 'publish' }}
+          RELEASE: ${{ inputs.release }}
         run: |
           if [ -z "$SOURCE_TOKEN" ]; then
             echo '::error::No SOURCE_TOKEN secret: see the top of .github/workflows/cam2you-release.yml'; exit 1
@@ -94,6 +108,14 @@ jobs:
               echo '::error::No ANDROID_SIGNING secret: a published release needs the TIE-Games key, or its APKs would not update the installed apps (see the top of this file)'; exit 1
             fi
             echo "::warning::No ANDROID_SIGNING secret: this draft's APKs are signed with a throwaway key; don't install them over a release"
+          fi
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            if [ "$PUBLISH" = true ]; then
+              echo '::error::No UPDATE_SIGNING_KEY secret: a published release needs it to sign update.json, or the desktop apps would not update themselves from it (see the top of this file)'; exit 1
+            fi
+            if [ "$RELEASE" = draft ]; then
+              echo "::warning::No UPDATE_SIGNING_KEY secret: this draft's update.json is not signed, and the desktop apps will not update from it"
+            fi
           fi
 
       - uses: actions/checkout@v4
@@ -543,6 +565,10 @@ jobs:
       && contains(fromJSON('["success", "skipped"]'), needs.ios.result) }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          path: site
       - uses: actions/download-artifact@v4
         with:
           pattern: dist-*
@@ -554,6 +580,21 @@ jobs:
           pattern: notes-*
           merge-multiple: true
           path: notes
+
+      # update.json: every desktop file of the release with its SHA-256,
+      # signed (update.json.minisig); the desktop apps update from it.
+      - name: Update manifest
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          MONTAGE_VERSION: ${{ needs.prepare.outputs.montage_version }}
+          PUBLISH: ${{ inputs.release == 'publish' }}
+        run: |
+          require=()
+          if [ "$PUBLISH" = true ]; then require=(--require-key); fi
+          python3 site/.github/scripts/update-manifest.py dist --tag "$TAG" --version "$VERSION" \
+            --montage-version "$MONTAGE_VERSION" "${require[@]}"
 
       - name: Release
         working-directory: dist
