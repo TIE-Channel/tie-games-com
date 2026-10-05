@@ -2,6 +2,14 @@
 # it is given, tries what it built, and uploads the files for the release as
 # the artifact dist-linux, with their lines for the release notes as
 # notes-linux (a Markdown file).
+#
+# One file, Cam2You-<version>-x86_64.AppImage (cam2you's SPEC §13.1), built
+# on Ubuntu 22.04, the oldest system it is for: the app with the LGPL FFmpeg
+# (BtbN's build, tool/fetch_ffmpeg.dart) and an LGPL libmpv built on it
+# (tool/build_libmpv.sh), packed by tool/build_appimage.sh. Then it is started
+# under Xvfb as a user starts it, with its self-check and two clips to join:
+# it must still run after 40 s, with its database and a passing self-check.
+# Montage is not built for Linux.
 name: Build Linux
 
 on:
@@ -31,6 +39,150 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
-      - run: echo "::warning::Cam2You for Linux is not built yet"
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/cam2you
+          ref: ${{ inputs.cam2you }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: cam2you
+          persist-credentials: false
+
+      # Flutter's Linux toolchain; the development files libmpv and the
+      # plugins are built against; FUSE 3 as on a desktop; Xvfb for the try.
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libsecret-1-dev libepoxy-dev libass-dev libpulse-dev libasound2-dev zlib1g-dev patchelf \
+            fuse3 xvfb xauth imagemagick > /dev/null
+          pipx install meson==1.6.1 > /dev/null
+          meson --version
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            cam2you/third_party/ffmpeg
+            cam2you/third_party/libmpv
+          key: cam2you-linux-ffmpeg-libmpv-ubuntu-22.04-${{ hashFiles('cam2you/tool/fetch_ffmpeg.dart', 'cam2you/tool/build_libmpv.sh') }}
+      - name: FFmpeg and libmpv (LGPL)
+        working-directory: cam2you
+        run: |
+          flutter pub get > /dev/null
+          dart run tool/fetch_ffmpeg.dart
+          bash tool/build_libmpv.sh
+
+      - name: Cam2You
+        working-directory: cam2you
+        env:
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        run: |
+          define=()
+          if [ -n "$BUILD_CONFIG_JSON" ]; then
+            printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
+            define=(--dart-define-from-file=build_config.json)
+          fi
+          flutter build linux --release ${define[@]+"${define[@]}"}
+
+      - name: AppImage
+        working-directory: cam2you
+        run: |
+          image=$(bash tool/build_appimage.sh)
+          mkdir -p ../dist
+          cp "$image" ../dist/
+          ls -l ../dist
+          test -f "../dist/Cam2You-$VERSION-x86_64.AppImage"
+
+      # As a user starts it, on a fresh home, with clips for its self-check
+      # to join (made by its own FFmpeg).
+      - name: Start the AppImage
+        run: |
+          set -euo pipefail
+          mkdir -p test
+          image="$PWD/dist/Cam2You-$VERSION-x86_64.AppImage"
+          "$image" --appimage-version || true
+          echo "FUSE: $(command -v fusermount3 || command -v fusermount || echo none)"
+          home="$RUNNER_TEMP/home"
+          support="$home/.local/share/com.tiegames.cam2you"
+          mkdir -p "$support/SelfCheck"
+          ff=cam2you/build/linux/x64/release/bundle/ffmpeg/ffmpeg
+          for n in 1 2; do
+            "$ff" -v error -f lavfi -i testsrc2=s=640x360:r=30 -f lavfi -i sine=frequency=440:sample_rate=48000 -t 3 \
+              -c:v libkvazaar -kvazaar-params preset=fast,gop=0,period=30 -pix_fmt yuv420p -c:a aac "$support/SelfCheck/clip$n.mp4"
+          done
+          cat > "$RUNNER_TEMP/try.sh" <<'SH'
+          set -u
+          HOME="$TRY_HOME" CAM2YOU_SELF_CHECK=1 "$TRY_IMAGE" > test/cam2you-linux.log 2>&1 &
+          pid=$!
+          # At least 40 s; the self-check ends within its time limits.
+          for i in $(seq 1 180); do
+            if [ -f "$TRY_SUPPORT/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
+            kill -0 "$pid" 2> /dev/null || break
+            sleep 1
+          done
+          import -window root test/cam2you-linux.png || echo '::warning::No screenshot'
+          if kill -0 "$pid" 2> /dev/null; then echo running > test/state; else echo stopped > test/state; fi
+          kill "$pid" 2> /dev/null || true
+          sleep 2
+          SH
+          TRY_HOME="$home" TRY_IMAGE="$image" TRY_SUPPORT="$support" \
+            xvfb-run -a -s '-screen 0 1280x800x24' bash "$RUNNER_TEMP/try.sh"
+          cp "$support/self-check.json" "$support/self-check.running.json" test/ 2> /dev/null || true
+          tail -40 test/cam2you-linux.log
+          if [ "$(cat test/state)" != running ]; then echo '::error::Cam2You stopped by itself'; exit 1; fi
+          if [ ! -f "$support/state.sqlite" ]; then echo '::error::Cam2You made no database (state.sqlite)'; exit 1; fi
+          if [ ! -f test/self-check.json ]; then
+            cat test/self-check.running.json 2> /dev/null || true
+            echo '::error::Cam2You wrote no self-check'; exit 1
+          fi
+          cat test/self-check.json
+          python3 - <<'PY'
+          import json, sys
+          check = json.load(open('test/self-check.json'))
+          failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
+          for name in ('storage', 'database', 'ffmpeg', 'render'):
+              if name not in check:
+                  failed.append(name + ' (not checked)')
+          if failed:
+              print('::error::Cam2You self-check failed: ' + ', '.join(failed))
+              sys.exit(1)
+          f = check['ffmpeg']
+          print('Cam2You starts on Linux: %s; database, FFmpeg (%s, %s) and a joined video'
+                % (check['storage'].get('detail'), f['h264'], f['hevc']))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-test
+          path: test/
+          if-no-files-found: ignore
+
+      - name: Notes
+        run: |
+          mkdir -p notes
+          {
+            echo '**Linux**, 64-bit (Ubuntu 22.04 or newer, Fedora and the like):'
+            echo
+            echo "- **Cam2You-$VERSION-x86_64.AppImage**: one file, nothing to install. Make it executable (in its Properties, *Allow executing file as program*, or \`chmod +x\`) and open it."
+          } > notes/3-linux.md
+          cat notes/3-linux.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes-linux
+          path: notes/3-linux.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: dist/*.AppImage
+          if-no-files-found: error
