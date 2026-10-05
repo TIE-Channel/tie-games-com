@@ -101,6 +101,9 @@ jobs:
           support="$data/Library/Application Support"
           mkdir -p "$support/SelfCheck"
           xcrun swift cam2you/tool/make_test_clips.swift "$support/SelfCheck"
+          # The self-check asked for (an app on the simulator may not see
+          # SIMCTL_CHILD_ variables).
+          touch "$support/self-check.request"
 
           SIMCTL_CHILD_CAM2YOU_SELF_CHECK=1 xcrun simctl launch --stdout="$PWD/test/cam2you-ios.log" \
             --stderr="$PWD/test/cam2you-ios.log" "$device" com.tiegames.cam2you
