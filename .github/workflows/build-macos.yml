@@ -70,18 +70,6 @@ jobs:
           xcodebuild -version
           uname -m
 
-      - uses: actions/cache@v4
-        id: ffmpeg
-        with:
-          path: cam2you/third_party/ffmpeg-macos
-          key: cam2you-ffmpeg-macos-${{ hashFiles('cam2you/tool/build_ffmpeg_macos.sh') }}
-      - name: FFmpeg for macOS (LGPL, VideoToolbox)
-        if: steps.ffmpeg.outputs.cache-hit != 'true'
-        working-directory: cam2you
-        run: |
-          brew install nasm > /dev/null
-          WORK="$RUNNER_TEMP/ffmpeg" bash tool/build_ffmpeg_macos.sh third_party/ffmpeg-macos
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -100,6 +88,18 @@ jobs:
           fi
           flutter pub get
           flutter build macos --release ${define[@]+"${define[@]}"}
+
+      - uses: actions/cache@v4
+        id: ffmpeg
+        with:
+          path: cam2you/third_party/ffmpeg-macos
+          key: cam2you-ffmpeg-macos-${{ hashFiles('cam2you/tool/build_ffmpeg_macos.sh') }}
+      - name: FFmpeg for macOS (LGPL, VideoToolbox)
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        working-directory: cam2you
+        run: |
+          brew install nasm > /dev/null
+          WORK="$RUNNER_TEMP/ffmpeg" bash tool/build_ffmpeg_macos.sh third_party/ffmpeg-macos
 
       # A Developer ID signature when the secrets are there (see the top).
       - name: Signing identity
@@ -159,7 +159,8 @@ jobs:
 
           CAM2YOU_SELF_CHECK=1 "$app/Contents/MacOS/Cam2You" > test/cam2you-macos.log 2>&1 &
           pid=$!
-          for i in $(seq 1 120); do
+          # At least 40 s; the self-check ends within its time limits.
+          for i in $(seq 1 300); do
             if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
             kill -0 "$pid" 2> /dev/null || break
             sleep 1
@@ -168,8 +169,9 @@ jobs:
           running=true
           kill -0 "$pid" 2> /dev/null || running=false
           kill "$pid" 2> /dev/null || true
-          cp "$support/self-check.json" test/ 2> /dev/null || true
-          tail -20 test/cam2you-macos.log
+          cp "$support/self-check.json" "$support/self-check.running.json" test/ 2> /dev/null || true
+          tail -40 test/cam2you-macos.log
+          if [ -f test/self-check.running.json ]; then cat test/self-check.running.json; fi
           if [ "$running" != true ]; then echo '::error::Cam2You stopped by itself'; exit 1; fi
           if [ ! -f "$support/state.sqlite" ]; then echo '::error::Cam2You made no database'; exit 1; fi
           if [ ! -f test/self-check.json ]; then echo '::error::Cam2You wrote no self-check'; exit 1; fi

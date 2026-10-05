@@ -104,14 +104,20 @@ jobs:
 
           SIMCTL_CHILD_CAM2YOU_SELF_CHECK=1 xcrun simctl launch --stdout="$PWD/test/cam2you-ios.log" \
             --stderr="$PWD/test/cam2you-ios.log" "$device" com.tiegames.cam2you
-          for i in $(seq 1 120); do
+          # At least 40 s; the self-check ends within its time limits.
+          for i in $(seq 1 300); do
             if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
             sleep 1
           done
           xcrun simctl io "$device" screenshot test/cam2you-ios.png > /dev/null || echo '::warning::No screenshot'
           running=$(xcrun simctl spawn "$device" launchctl list | grep 'UIKitApplication:com.tiegames.cam2you' | awk '{print $1}' || true)
-          cp "$support/self-check.json" test/ 2> /dev/null || true
+          cp "$support/self-check.json" "$support/self-check.running.json" test/ 2> /dev/null || true
           tail -20 test/cam2you-ios.log || true
+          # Flutter's own lines (print, uncaught errors) go to the system log.
+          xcrun simctl spawn "$device" log show --last 10m --style compact \
+            --predicate 'process == "Cam2You" AND eventMessage CONTAINS "flutter"' > test/cam2you-ios-flutter.log 2>&1 || true
+          tail -40 test/cam2you-ios-flutter.log || true
+          if [ -f test/self-check.running.json ]; then cat test/self-check.running.json; fi
           if [ -z "$running" ] || [ "$running" = - ]; then echo '::error::Cam2You is not running 40 s after it was started'; exit 1; fi
           if [ ! -f "$support/state.sqlite" ]; then echo '::error::Cam2You made no database'; exit 1; fi
           if [ ! -f test/self-check.json ]; then echo '::error::Cam2You wrote no self-check'; exit 1; fi
