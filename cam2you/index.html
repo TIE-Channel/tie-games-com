@@ -134,6 +134,7 @@
   }
   .button:hover { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
   .download .file { font-size: 14px; color: #666; margin: 10px 0 16px; }
+  .download .system + .system { border-top: 1px solid #ccc; margin-top: 24px; padding-top: 24px; }
   .download ul { font-size: 15px; margin-bottom: 0; }
   .download ul li { margin-bottom: 6px; }
 
@@ -167,17 +168,34 @@
 
 <section class="download" id="download">
   <h2>Download</h2>
-  <p class="platform">WINDOWS 10 AND 11, 64-BIT</p>
-  <!-- Filled from the newest cam2you-v* release of github.com/TIE-Channel/tie-games-com (script below). -->
-  <div id="download-latest">
-    <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Windows</a></p>
+  <!-- Both filled from the newest cam2you-v* release of github.com/TIE-Channel/tie-games-com (script below);
+       on an Android phone, Android comes first. -->
+  <div id="systems">
+    <div class="system" id="windows">
+      <p class="platform">WINDOWS 10 AND 11, 64-BIT</p>
+      <div id="download-windows">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Windows</a></p>
+      </div>
+      <ul>
+        <li>The installer asks where to install and whether to put a shortcut on the desktop. No administrator rights are needed.</li>
+        <li>It can also install <strong>Montage</strong>, which edits the videos you upload into one film by itself (Auto-edit). Untick it if you don't want it.</li>
+        <li>The installer isn't code-signed yet: if Windows says <em>Windows protected your PC</em>, click <em>More info</em>, then <em>Run anyway</em>.</li>
+        <li>To remove Cam2You: Windows Settings &rarr; Apps &rarr; Installed apps &rarr; Cam2You &rarr; Uninstall. Montage has an entry of its own there.</li>
+      </ul>
+    </div>
+    <div class="system" id="android">
+      <p class="platform">ANDROID 10 OR NEWER</p>
+      <div id="download-android">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Android</a></p>
+      </div>
+      <ul>
+        <li>Open this page on your phone, tap the button, then open the downloaded file and tap <em>Install</em>.</li>
+        <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
+        <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
+        <li>A new version installs over the old one the same way; your projects, settings and YouTube channel stay.</li>
+      </ul>
+    </div>
   </div>
-  <ul>
-    <li>The installer asks where to install and whether to put a shortcut on the desktop. No administrator rights are needed.</li>
-    <li>It can also install <strong>Montage</strong>, which edits the videos you upload into one film by itself (Auto-edit). Untick it if you don't want it.</li>
-    <li>The installer isn't code-signed yet: if Windows says <em>Windows protected your PC</em>, click <em>More info</em>, then <em>Run anyway</em>.</li>
-    <li>To remove Cam2You: Windows Settings &rarr; Apps &rarr; Installed apps &rarr; Cam2You &rarr; Uninstall. Montage has an entry of its own there.</li>
-  </ul>
 </section>
 
 <h2>What it does</h2>
@@ -217,40 +235,70 @@
 
 <script>
 // The download links: the newest Cam2You release (tag cam2you-v<version>) of
-// the site's repository, with its full installer and the small one that
-// downloads what it installs. Without one, or without GitHub's API, the
-// button above leads to the releases page.
+// the site's repository — for Windows its full installer and the small one
+// that downloads what it installs, for Android the APKs of Cam2You and
+// Montage. Without one, or without GitHub's API, the buttons above lead to
+// the releases page.
 (function () {
-  var box = document.getElementById('download-latest');
   var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+
+  // On an Android phone, Android first.
+  if (/Android/i.test(navigator.userAgent)) {
+    var systems = document.getElementById('systems');
+    systems.insertBefore(document.getElementById('android'), document.getElementById('windows'));
+  }
+
   fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (releases) {
-      var release = releases.filter(function (r) {
+      var cam2you = releases.filter(function (r) {
         return !r.draft && !r.prerelease && /^cam2you-v/.test(r.tag_name);
-      })[0];
+      });
+      function asset(release, re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
+      function date(release) {
+        return new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      function version(release) { return release.tag_name.replace(/^cam2you-v/, ''); }
+
+      var windows = document.getElementById('download-windows');
+      var release = cam2you[0];
       if (!release) {
-        box.innerHTML = '<p>The Windows installer is coming soon.</p>';
+        windows.innerHTML = '<p>The Windows installer is coming soon.</p>';
+      } else {
+        var full = asset(release, /^Cam2You-Setup-[\d.]+\.exe$/);
+        var web = asset(release, /^Cam2You-Web-Setup-[\d.]+\.exe$/);
+        var main = full || web;
+        if (main) {
+          var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Cam2You ' + esc(version(release)) + ' for Windows</a></p>' +
+            '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
+          if (full && web) {
+            html += '<br>Slow connection? The <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
+              ') downloads only what you choose to install.';
+          }
+          windows.innerHTML = html + '</p>';
+        }
+      }
+
+      // The newest release with an APK (the first ones had none).
+      var android = document.getElementById('download-android');
+      var withApk = cam2you.filter(function (r) { return asset(r, /^Cam2You-[\d.]+\.apk$/); })[0];
+      if (!withApk) {
+        android.innerHTML = '<p>The Android app is coming soon.</p>';
         return;
       }
-      function asset(re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
-      var full = asset(/^Cam2You-Setup-[\d.]+\.exe$/);
-      var web = asset(/^Cam2You-Web-Setup-[\d.]+\.exe$/);
-      var version = release.tag_name.replace(/^cam2you-v/, '');
-      var date = new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      var main = full || web;
-      if (!main) return;
-      var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Cam2You ' + esc(version) + '</a></p>' +
-        '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date);
-      if (full && web) {
-        html += '<br>Slow connection? The <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
-          ') downloads only what you choose to install.';
+      var apk = asset(withApk, /^Cam2You-[\d.]+\.apk$/);
+      var montage = asset(withApk, /^Montage-[\d.]+\.apk$/);
+      var text = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Cam2You ' + esc(version(withApk)) + ' for Android</a></p>' +
+        '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk));
+      if (montage) {
+        text += '<br>For Auto-edit on the phone, install <a href="' + esc(montage.browser_download_url) + '">Montage</a> too (' +
+          mb(montage.size) + ', phones with a 64-bit ARM processor).';
       }
-      box.innerHTML = html + '</p>';
+      android.innerHTML = text + '</p>';
     })
-    .catch(function () { /* the button to the releases page stays */ });
+    .catch(function () { /* the buttons to the releases page stay */ });
 })();
 </script>
 
