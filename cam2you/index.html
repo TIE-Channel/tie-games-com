@@ -189,10 +189,10 @@
         <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Android</a></p>
       </div>
       <ul>
-        <li>Open this page on your phone, tap the button, then open the downloaded file and tap <em>Install</em>.</li>
+        <li>Open this page on your phone and tap the button. When the download is finished, tap <em>Open</em> (in the message at the bottom, or in your notifications), then <em>Install</em>.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
         <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
-        <li>A new version installs over the old one the same way; your projects, settings and YouTube channel stay.</li>
+        <li>On its first start Cam2You asks whether to install <strong>Montage</strong> too, which edits the videos you upload into one film by itself (Auto-edit). Later it installs new versions of both itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
       </ul>
     </div>
   </div>
@@ -293,7 +293,7 @@
       var text = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Cam2You ' + esc(version(withApk)) + ' for Android</a></p>' +
         '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk));
       if (montage) {
-        text += '<br>For Auto-edit on the phone, install <a href="' + esc(montage.browser_download_url) + '">Montage</a> too (' +
+        text += '<br>Cam2You installs Montage for you; to install it yourself: <a href="' + esc(montage.browser_download_url) + '">Montage</a> (' +
           mb(montage.size) + ', phones with a 64-bit ARM processor).';
       }
       android.innerHTML = text + '</p>';
