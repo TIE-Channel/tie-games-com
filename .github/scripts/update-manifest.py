@@ -13,7 +13,7 @@ AppImages, macOS's disk images) and writes the folder's update.json:
       "schema": 1,
       "tag": "cam2you-v0.1.4",
       "version": "0.1.4",           Cam2You's version
-      "montage_version": "0.1.1",
+      "montage_version": "0.1.1",   only when Montage's files are there
       "min_version": "0.0.0",       the oldest Cam2You that may update itself to it
       "published": "2026-10-05T12:00:00Z",
       "expires": "2027-10-05T12:00:00Z",
@@ -22,6 +22,10 @@ AppImages, macOS's disk images) and writes the folder's update.json:
                  "url": "https://github.com/<repository>/releases/download/<tag>/<name>",
                  "sha256": "...", "size": 123}, ...]
     }
+
+A release may come without Montage (it is to become part of Cam2You): then
+only Cam2You's files are listed, and --montage-version may be left out or
+empty; the apps take Montage from an older release, or do without.
 
 The apps refuse it once it has expired (--days after now, 365 by default): a
 new release, or this script run again on the release's files and the new
@@ -93,7 +97,7 @@ def desktop_files(folder, tag, repository, versions):
             if not match:
                 continue
             app, version = match.group(1), match.group(2)
-            if version != versions[app]:
+            if versions.get(app) and version != versions[app]:
                 fail(f'{name} is not {app} {versions[app]}, the version of this release')
             path = os.path.join(folder, name)
             files.append({
@@ -229,7 +233,7 @@ def main():
     parser.add_argument('folder', help="the release's files")
     parser.add_argument('--tag', required=True, help='the release tag, cam2you-v<version>')
     parser.add_argument('--version', required=True, help="Cam2You's version")
-    parser.add_argument('--montage-version', required=True, help="Montage's version")
+    parser.add_argument('--montage-version', help="Montage's version (none: the release has no Montage)")
     parser.add_argument('--min-version', default='0.0.0', help='the oldest Cam2You that may update itself to this one')
     parser.add_argument('--days', type=int, default=365, help='how long the apps accept it')
     parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY') or 'TIE-Channel/tie-games-com')
@@ -241,13 +245,14 @@ def main():
     now = (datetime.datetime.fromisoformat(args.now.replace('Z', '+00:00')) if args.now
            else datetime.datetime.now(datetime.timezone.utc)).replace(microsecond=0)
     stamp = lambda t: t.astimezone(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    files = desktop_files(args.folder, args.tag, args.repository,
-                          {'Cam2You': args.version, 'Montage': args.montage_version})
+    montage = args.montage_version or None
+    files = desktop_files(args.folder, args.tag, args.repository, {'Cam2You': args.version, 'Montage': montage})
+    with_montage = montage and any(f['app'] == 'Montage' for f in files)
     manifest = {
         'schema': 1,
         'tag': args.tag,
         'version': args.version,
-        'montage_version': args.montage_version,
+        **({'montage_version': montage} if with_montage else {}),
         'min_version': args.min_version,
         'published': stamp(now),
         'expires': stamp(now + datetime.timedelta(days=args.days)),
