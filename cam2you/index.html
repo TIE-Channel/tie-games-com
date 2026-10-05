@@ -136,6 +136,8 @@
   .download .file { font-size: 14px; color: #666; margin: 10px 0 16px; }
   .download .system + .system { border-top: 1px solid #ccc; margin-top: 24px; padding-top: 24px; }
   .download ul { font-size: 15px; margin-bottom: 0; }
+  .download .inapp { border: 2px solid #b50026; padding: 4px 16px; margin-bottom: 16px; font-size: 15px; }
+  .download .inapp[hidden] { display: none; }
   .download ul li { margin-bottom: 6px; }
 
   @media (max-width: 520px) {
@@ -185,11 +187,16 @@
     </div>
     <div class="system" id="android">
       <p class="platform">ANDROID 10 OR NEWER</p>
+      <div class="inapp" id="inapp" hidden>
+        <p><strong>Open this page in Chrome first.</strong> It is open inside another app (Telegram, WhatsApp, Gmail…), which can't download files: there the button below does nothing.</p>
+        <p><a class="button" id="open-in-chrome" href="https://tie-games.com/cam2you/">Open in Chrome</a></p>
+        <p>If nothing happens: tap <strong>&#8942;</strong> or <strong>&#8943;</strong> at the top, then <em>Open in Chrome</em> or <em>Open in browser</em>.</p>
+      </div>
       <div id="download-android">
         <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Android</a></p>
       </div>
       <ul>
-        <li>Open this page on your phone and tap the button. When the download is finished, tap <em>Open</em> (in the message at the bottom, or in your notifications), then <em>Install</em>.</li>
+        <li>Open this page in your phone's browser (Chrome — not inside another app) and tap the button. When the download is finished, tap <em>Open</em> (in the message at the bottom, or in your notifications), then <em>Install</em>.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
         <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
         <li>On its first start Cam2You asks whether to install <strong>Montage</strong> too, which edits the videos you upload into one film by itself (Auto-edit). Later it installs new versions of both itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
@@ -245,9 +252,17 @@
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
   // On an Android phone, Android first.
-  if (/Android/i.test(navigator.userAgent)) {
+  var ua = navigator.userAgent;
+  if (/Android/i.test(ua)) {
     var systems = document.getElementById('systems');
     systems.insertBefore(document.getElementById('android'), document.getElementById('windows'));
+    // Opened inside another app (its WebView: "; wv)" in the user agent):
+    // most of them can't download, so the page asks to be opened in Chrome.
+    if (/; wv\)|FBAN|FBAV|Instagram|Telegram|MicroMessenger|Line\//.test(ua)) {
+      document.getElementById('inapp').hidden = false;
+      document.getElementById('open-in-chrome').href = 'intent://' + location.host + location.pathname +
+        '#Intent;scheme=https;package=com.android.chrome;end';
+    }
   }
 
   fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
