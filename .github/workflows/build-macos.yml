@@ -8,7 +8,7 @@
 # updates replace the installed app with the one in it. The app carries an
 # LGPL FFmpeg built here from source with Apple's VideoToolbox encoders
 # (cam2you's tool/build_ffmpeg_macos.sh; kept in the cache while that script
-# is the same), whose shared libraries Auto-edit's engine (cam2you's engine/,
+# and tool/ffmpeg_apple_source.sh are the same), whose shared libraries Auto-edit's engine (cam2you's engine/,
 # Rust, built for both halves) loads too. Before the upload the disk image is
 # opened, the app copied out and started: it must still run after 40 s, with
 # its database made and its self-check passed (keychain, database, FFmpeg and
@@ -75,7 +75,7 @@ jobs:
         id: ffmpeg
         with:
           path: cam2you/third_party/ffmpeg-macos
-          key: cam2you-ffmpeg-macos-${{ hashFiles('cam2you/tool/build_ffmpeg_macos.sh') }}
+          key: cam2you-ffmpeg-macos-${{ hashFiles('cam2you/tool/build_ffmpeg_macos.sh', 'cam2you/tool/ffmpeg_apple_source.sh') }}
       - name: FFmpeg for macOS (LGPL, VideoToolbox)
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         working-directory: cam2you

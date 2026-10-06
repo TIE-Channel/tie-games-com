@@ -5,7 +5,7 @@
 #
 # Both builds carry Auto-edit's engine (cam2you's engine/, Rust) and the LGPL
 # FFmpeg it uses, as frameworks (cam2you's tool/build_ffmpeg_ios.sh, for
-# iPhones and the simulator; kept in the cache while that script is the same).
+# iPhones and the simulator; kept in the cache while that script and tool/ffmpeg_apple_source.sh are the same).
 # First a build for the simulator is installed and started on an iPhone
 # simulator: it must still run after 40 s, with its database made and its
 # self-check passed (keychain, database, two clips joined by the AVFoundation
@@ -74,7 +74,7 @@ jobs:
         id: ffmpeg
         with:
           path: cam2you/third_party/ffmpeg-ios
-          key: cam2you-ffmpeg-ios-${{ hashFiles('cam2you/tool/build_ffmpeg_ios.sh') }}
+          key: cam2you-ffmpeg-ios-${{ hashFiles('cam2you/tool/build_ffmpeg_ios.sh', 'cam2you/tool/ffmpeg_apple_source.sh') }}
       - name: FFmpeg for iOS (LGPL, frameworks)
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         working-directory: cam2you
