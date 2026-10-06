@@ -9,7 +9,6 @@
 # (tool/build_libmpv.sh), packed by tool/build_appimage.sh. Then it is started
 # under Xvfb as a user starts it, with its self-check and two clips to join:
 # it must still run after 40 s, with its database and a passing self-check.
-# Montage is not built for Linux.
 name: Build Linux
 
 on:
@@ -19,16 +18,8 @@ on:
         description: cam2you commit
         type: string
         required: true
-      montage:
-        description: Montage commit
-        type: string
-        required: true
       version:
         description: Cam2You's version
-        type: string
-        required: true
-      montage_version:
-        description: Montage's version
         type: string
         required: true
 

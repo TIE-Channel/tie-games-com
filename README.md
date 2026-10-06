@@ -77,10 +77,10 @@ This replaces the previous github.io URL.
 
 The Download section of `cam2you/index.html` links to the newest release of this repository tagged `cam2you-v<version>` (read from GitHub's API in the browser) — for Windows its installers, for Android the APKs of the newest release that has them, Android first on an Android phone — so a new release needs no change to the page. Cam2You's small web installer downloads from the release of its version.
 
-Releases are built by `.github/workflows/cam2you-release.yml`: Actions -> Cam2You release -> Run workflow (Cam2You and Montage branches; Publish, or a draft). It builds both apps for Windows and Android side by side: the four Windows installers, tried on the runner (install, start both apps, remove), and the APKs of Cam2You (installed and started on an Android 14 emulator) and Montage (left out when its build fails); then it publishes them as one release. Raise the version in cam2you's `pubspec.yaml` before each release.
+Releases are built by `.github/workflows/cam2you-release.yml`: Actions -> Cam2You release -> Run workflow (Cam2You's branch; Publish, a draft, or none to only build and try). It builds Cam2You, with its Auto-edit engine, for Windows and Android side by side, and for Linux, macOS and iOS with their own workflows: the Windows installers, tried on the runner (installed, started with a self-check that auto-edits two clips, removed), and the APK (installed and started on an Android 14 emulator); then it publishes them as one release. Raise the version in cam2you's `pubspec.yaml` before each release.
 
 It needs these repository secrets (Settings -> Secrets and variables -> Actions):
 
-- `SOURCE_TOKEN`: a fine-grained personal access token with read access to the contents of TIE-Channel/cam2you and TIE-Channel/Montage (both private)
+- `SOURCE_TOKEN`: a fine-grained personal access token with read access to the contents of TIE-Channel/cam2you (private)
 - `BUILD_CONFIG_JSON`: the contents of cam2you's `build_config.json` (Google sign-in)
 - `ANDROID_SIGNING`: the TIE-Games Android signing key as JSON (`keystore`: a PKCS #12 file in base64, `password`, `alias`). Every version must be signed with the same key, or Android won't install it over the last one: keep a copy of the key safe. A draft can be built without it (a throwaway key).

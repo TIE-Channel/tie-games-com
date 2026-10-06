@@ -180,9 +180,8 @@
       </div>
       <ul>
         <li>The installer asks where to install and whether to put a shortcut on the desktop. No administrator rights are needed.</li>
-        <li>It can also install <strong>Montage</strong>, which edits the videos you upload into one film by itself (Auto-edit). Untick it if you don't want it.</li>
         <li>The installer isn't code-signed yet: if Windows says <em>Windows protected your PC</em>, click <em>More info</em>, then <em>Run anyway</em>.</li>
-        <li>To remove Cam2You: Windows Settings &rarr; Apps &rarr; Installed apps &rarr; Cam2You &rarr; Uninstall. Montage has an entry of its own there.</li>
+        <li>To remove Cam2You: Windows Settings &rarr; Apps &rarr; Installed apps &rarr; Cam2You &rarr; Uninstall.</li>
       </ul>
     </div>
     <div class="system" id="android">
@@ -199,7 +198,7 @@
         <li>Open this page in your phone's browser (Chrome — not inside another app) and tap the button. When the download is finished, tap <em>Open</em> (in the message at the bottom, or in your notifications), then <em>Install</em>.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
         <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
-        <li>On its first start Cam2You asks whether to install <strong>Montage</strong> too, which edits the videos you upload into one film by itself (Auto-edit). Later it installs new versions of both itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
+        <li>Later Cam2You installs its new versions itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
       </ul>
     </div>
   </div>
@@ -211,6 +210,7 @@
   <li><strong>Previews and cuts</strong>: trim the start and end of each video, or keep several parts of it, frame-exact.</li>
   <li><strong>Joins videos</strong> into one with a transition of your choice, or uploads them as a playlist in the order you arrange.</li>
   <li><strong>Suggests names</strong> from where and when the videos were recorded, such as <em>Rovinj, Croatia (August 2026)</em>, using the camera's GPS and a place database built into the app.</li>
+  <li><strong>Edits by itself</strong> (Pro): with Auto-edit, the videos you upload become one film, cut and put together on your device, with music if you like.</li>
   <li><strong>Uploads reliably</strong>: a queue that resumes after interruptions and waits for YouTube's daily limits.</li>
 </ul>
 <p>Cam2You runs on Windows and Android; an iPhone version is planned.</p>
@@ -243,8 +243,7 @@
 <script>
 // The download links: the newest Cam2You release (tag cam2you-v<version>) of
 // the site's repository — for Windows its full installer and the small one
-// that downloads what it installs, for Android the APKs of Cam2You and
-// Montage. Without one, or without GitHub's API, the buttons above lead to
+// that downloads what it installs, for Android Cam2You's APK. Without one, or without GitHub's API, the buttons above lead to
 // the releases page.
 (function () {
   var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
@@ -304,13 +303,8 @@
         return;
       }
       var apk = asset(withApk, /^Cam2You-[\d.]+\.apk$/);
-      var montage = asset(withApk, /^Montage-[\d.]+\.apk$/);
       var text = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Cam2You ' + esc(version(withApk)) + ' for Android</a></p>' +
         '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk));
-      if (montage) {
-        text += '<br>Cam2You installs Montage for you; to install it yourself: <a href="' + esc(montage.browser_download_url) + '">Montage</a> (' +
-          mb(montage.size) + ', phones with a 64-bit ARM processor).';
-      }
       android.innerHTML = text + '</p>';
     })
     .catch(function () { /* the buttons to the releases page stay */ });

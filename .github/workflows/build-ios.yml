@@ -20,16 +20,8 @@ on:
         description: cam2you commit
         type: string
         required: true
-      montage:
-        description: Montage commit
-        type: string
-        required: true
       version:
         description: Cam2You's version
-        type: string
-        required: true
-      montage_version:
-        description: Montage's version
         type: string
         required: true
 

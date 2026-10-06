@@ -1,4 +1,5 @@
-# Builds Cam2You and Montage for Windows and Android and publishes them as a
+# Builds Cam2You for Windows and Android, with Auto-edit's engine built into
+# it (cam2you's engine/, SPEC §8.12), and publishes them as a
 # release of this repository, tagged cam2you-v<version>: the Download section
 # of tie-games.com/cam2you links to the newest one, and Cam2You's small web
 # installer downloads from it (cam2you's SPEC §13.1). It runs here, in the
@@ -11,10 +12,11 @@
 # it, as the Android app does from the APKs.
 #
 # Run it by hand: Actions → Cam2You release → Run workflow. Before a release
-# is made the Windows installer is tried on its runner (installed, both apps
-# started, both removed again) and Cam2You's APK on an Android emulator
-# (installed and started). Montage's APK is left out of a release when its
-# build fails; everything else must succeed.
+# is made the Windows installer is tried on its runner (installed, started
+# with its self-check — the engine loads and auto-edits two clips — and
+# removed again) and Cam2You's APK on an Android emulator (installed and
+# started; the emulator is x86-64, so the 64-bit ARM engine is only checked
+# to be in the APK). Everything must succeed.
 #
 # Linux, macOS and iOS are built by workflows of their own (build-linux.yml,
 # build-macos.yml, build-ios.yml), called from here. Each uploads its files as
@@ -24,7 +26,7 @@
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   SOURCE_TOKEN       a fine-grained personal access token: owner TIE-Channel,
-#                      repositories cam2you and Montage, permission Contents:
+#                      repository cam2you, permission Contents:
 #                      Read-only
 #   BUILD_CONFIG_JSON  cam2you's build_config.json (Google sign-in, its SPEC
 #                      §8.11); without it Cam2You is built without sign-in
@@ -47,9 +49,6 @@ on:
     inputs:
       cam2you_ref:
         description: Cam2You branch, tag or commit
-        default: main
-      montage_ref:
-        description: Montage branch, tag or commit
         default: main
       release:
         description: Publish the release, make a draft (seen only by those who can edit this repository), or none (only build and try)
@@ -84,9 +83,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
-      montage_version: ${{ steps.version.outputs.montage_version }}
       cam2you: ${{ steps.version.outputs.cam2you }}
-      montage: ${{ steps.version.outputs.montage }}
     steps:
       - name: Secrets
         env:
@@ -125,13 +122,6 @@ jobs:
           token: ${{ secrets.SOURCE_TOKEN }}
           path: cam2you
           persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: TIE-Channel/Montage
-          ref: ${{ inputs.montage_ref }}
-          token: ${{ secrets.SOURCE_TOKEN }}
-          path: Montage
-          persist-credentials: false
 
       - name: Version
         id: version
@@ -145,9 +135,7 @@ jobs:
           {
             echo "version=$version"
             echo "tag=$tag"
-            echo "montage_version=$(grep -oP '^version:\s*\K[\d.]+' Montage/app/pubspec.yaml)"
             echo "cam2you=$(git -C cam2you rev-parse HEAD)"
-            echo "montage=$(git -C Montage rev-parse HEAD)"
           } >> "$GITHUB_OUTPUT"
           if [ "$RELEASE" != none ] && gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && [ "$REPLACE" != true ]; then
             echo "::error::Cam2You $version is released already: raise the version in cam2you's pubspec.yaml, or tick Replace"; exit 1
@@ -169,21 +157,12 @@ jobs:
           token: ${{ secrets.SOURCE_TOKEN }}
           path: cam2you
           persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: TIE-Channel/Montage
-          ref: ${{ needs.prepare.outputs.montage }}
-          token: ${{ secrets.SOURCE_TOKEN }}
-          path: Montage
-          persist-credentials: false
 
-      # Built from short folders: whisper.cpp's build nests deep paths under
-      # Montage (.ck, see its cargokit.cmake), and cl.exe stops at 260
-      # characters, which D:\a\tie-games-com\tie-games-com\ goes past.
-      - name: Short paths
+      # Built from a short folder: whisper.cpp's build in the engine nests
+      # deep paths (cargokit's .ck), and cl.exe stops at 260 characters,
+      # which D:\a\tie-games-com\tie-games-com\ goes past.
+      - name: Short path
         run: |
-          robocopy Montage C:\M /E /NFL /NDL /NJH /NJS /NP
-          if ($LASTEXITCODE -ge 8) { throw 'Montage was not copied' }
           robocopy cam2you C:\C /E /NFL /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 8) { throw 'cam2you was not copied' }
           exit 0
@@ -193,11 +172,13 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      # cl, Ninja and CMake for whisper.cpp in Montage's core.
+      - uses: dtolnay/rust-toolchain@stable
+      # cl, Ninja and CMake for whisper.cpp in the engine.
       - uses: ilammy/msvc-dev-cmd@v1
       # Speech recognition on the graphics card (whisper.cpp's Vulkan backend):
       # the SDK only, so the runner has no Vulkan loader of its own, like a PC
-      # without a graphics driver that brings one.
+      # without a graphics driver that brings one (the app's own, from
+      # media_kit, serves then).
       - uses: jakoch/install-vulkan-sdk-action@v1
         with:
           vulkan_version: latest
@@ -208,21 +189,14 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            C:\M\.ck
-          key: montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-${{ github.run_id }}
+            C:\C\.ck
+          key: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
           restore-keys: |
-            montage-rust-${{ hashFiles('Montage/app/rust/Cargo.lock', 'Montage/core/Cargo.lock') }}-
-            montage-rust-
+            engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
+            engine-windows-
 
-      - name: Montage
-        working-directory: C:\M
-        run: |
-          ./scripts/fetch-ffmpeg.ps1
-          . ./scripts/env.ps1
-          Set-Location app
-          flutter pub get
-          flutter build windows --release
-
+      # The app with the engine in it (CAM2YOU_ENGINE=1, set by the script),
+      # against the same LGPL FFmpeg it bundles.
       - name: Cam2You
         working-directory: C:\C
         env:
@@ -235,7 +209,11 @@ jobs:
           }
           flutter pub get
           dart run tool/fetch_ffmpeg.dart
+          . ./engine/scripts/env-windows.ps1
           flutter build windows --release $define
+          $engine = 'build\windows\x64\runner\Release\cam2you_engine.dll'
+          if (-not (Test-Path $engine)) { throw "No engine in the build: $engine" }
+          "The engine: $((Get-Item $engine).Length) bytes"
 
       - name: Installers
         working-directory: C:\C
@@ -243,11 +221,12 @@ jobs:
           if (-not (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue)) {
             choco install innosetup --no-progress -y
           }
-          dart run tool/build_installer.dart --montage C:\M\app\build\windows\x64\runner\Release
+          dart run tool/build_installer.dart
           Get-ChildItem build/installer/*.exe | Format-Table Name, Length
 
-      # The full installer as a user runs it, unattended: Cam2You and Montage
-      # installed for this user, both start, both are removed again.
+      # The full installer as a user runs it, unattended: Cam2You installed
+      # for this user, started with its self-check (two clips to join and
+      # auto-edit), removed again.
       - name: Install, start, remove
         working-directory: C:\C\build\installer
         env:
@@ -271,40 +250,49 @@ jobs:
           $setup = Start-Process -Wait -PassThru ".\Cam2You-Setup-$env:VERSION.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log"
           if ($setup.ExitCode -ne 0) { Get-Content $log -Tail 30; throw "The installer failed: $($setup.ExitCode)" }
           $cam = "$programs\Cam2You\cam2you.exe"
-          $montage = "$programs\Montage\montage_app.exe"
           if (-not (Test-Path $cam)) { throw "No $cam" }
+          if (-not (Test-Path "$programs\Cam2You\cam2you_engine.dll")) { throw 'No engine (cam2you_engine.dll) installed' }
           if (-not (Test-Path "$([Environment]::GetFolderPath('Desktop'))\Cam2You.lnk")) { throw 'No desktop shortcut' }
-
-          if ($media) {
-            if (-not (Test-Path $montage)) { Get-Content $log -Tail 30; throw "No $montage" }
-            $record = "$env:LOCALAPPDATA\Montage\app.json"
-            if (-not (Test-Path $record)) { throw "No $record" }
-            if (-not $loader -and -not (Test-Path "$programs\Montage\vulkan-1.dll")) { throw 'No Vulkan loader for Montage' }
-            # Montage writes its record again once its core is loaded: it starts.
-            Remove-Item $record
-            $p = Start-Process $montage -PassThru
-            $started = WaitFor { Test-Path $record } 90
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-            if (-not $started) { throw 'Montage did not start: no app.json after 90 s' }
-            "Montage starts: $(Get-Content $record)"
-          } elseif (-not (Select-String -Path $log -Pattern 'Montage is left out' -Quiet)) {
-            throw 'Montage was neither installed nor left out on purpose'
-          }
 
           # Cam2You opens its database once it is up.
           $p = Start-Process $cam -PassThru
-          $started = WaitFor { Get-ChildItem $env:APPDATA -Recurse -Depth 3 -Filter state.sqlite -ErrorAction SilentlyContinue } 90
+          $db = WaitFor { Get-ChildItem $env:APPDATA -Recurse -Depth 3 -Filter state.sqlite -ErrorAction SilentlyContinue } 90
+          if (-not $db) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; throw 'Cam2You made no database within 90 s' }
+          $support = (Get-ChildItem $env:APPDATA -Recurse -Depth 3 -Filter state.sqlite | Select-Object -First 1).DirectoryName
+          "Cam2You starts; its data: $support"
+          # The clips the self-check joins and auto-edits, made by the bundled FFmpeg;
+          # then Cam2You again, which finds them.
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Start-Sleep 2
+          $clips = New-Item -ItemType Directory -Force "$support\SelfCheck"
+          $ffmpeg = "$programs\Cam2You\ffmpeg\ffmpeg.exe"
+          foreach ($i in 1, 2) {
+            & $ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=1280x720:rate=30:duration=6" `
+              -f lavfi -i "sine=frequency=$(300 * $i):duration=6" -c:v libopenh264 -b:v 2M -c:a aac -shortest "$clips\clip$i.mp4"
+            if ($LASTEXITCODE -ne 0) { throw 'No self-check clips' }
+          }
+          Remove-Item "$support\self-check.json" -ErrorAction SilentlyContinue
+          $env:CAM2YOU_SELF_CHECK = '1'
+          $p = Start-Process $cam -PassThru
+          $checked = WaitFor { Test-Path "$support\self-check.json" } 600
           $running = -not $p.HasExited
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          if (-not $running) { throw "Cam2You stopped by itself: $($p.ExitCode)" }
-          if ($started) { 'Cam2You starts' } else { '::warning::Cam2You runs, but made no database within 90 s' }
-
-          foreach ($app in @("$programs\Cam2You", "$programs\Montage")) {
-            if (-not (Test-Path "$app\unins000.exe")) { continue }
-            Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
-            if (-not (WaitFor { -not (Test-Path "$app\unins000.exe") } 120)) { throw "$app was not removed" }
+          if (-not $checked) {
+            Get-Content "$support\self-check.running.json" -ErrorAction SilentlyContinue
+            throw "No self-check within 600 s (Cam2You running: $running)"
           }
-          'Both removed'
+          $result = Get-Content "$support\self-check.json" -Raw
+          $result
+          $json = $result | ConvertFrom-Json
+          if (-not $json.engine.ok) { throw "The engine did not load or work: $($json.engine.error)" }
+          if (-not $json.'auto-edit'.ok) { throw "Auto-edit did not work: $($json.'auto-edit'.error)" }
+          if (-not $json.ok) { '::warning::Not every self-check passed (see above)' }
+          'The engine loads and auto-edits'
+
+          $app = "$programs\Cam2You"
+          Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
+          if (-not (WaitFor { -not (Test-Path "$app\unins000.exe") } 120)) { throw "$app was not removed" }
+          'Removed'
 
       - name: Logs
         if: failure()
@@ -322,7 +310,9 @@ jobs:
 
   # Cam2You for Android phones: one APK for 64-bit ARM phones and x86-64
   # (Chromebooks, the emulator), signed with the TIE-Games key, then installed
-  # and started on an Android 14 emulator.
+  # and started on an Android 14 emulator. The engine (Auto-edit) is built for
+  # 64-bit ARM only, against FFmpeg for Android built first (kept in the
+  # cache while its script is the same); x86-64 runs without it.
   android:
     needs: prepare
     if: contains(inputs.platforms, 'android')
@@ -347,6 +337,36 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - name: Tools and NDK
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q meson ninja-build pkg-config xxd
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;28.2.13676358' > /dev/null
+
+      - uses: actions/cache@v4
+        id: ffmpeg
+        with:
+          path: cam2you/engine/third_party/ffmpeg-android
+          key: engine-ffmpeg-android-${{ hashFiles('cam2you/engine/scripts/build-ffmpeg-android.sh') }}
+      # With the runner's NDK (the same r28c) rather than a second download.
+      - name: FFmpeg for Android
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          export WORK="$RUNNER_TEMP/ffmpeg-android"
+          mkdir -p "$WORK"
+          ln -s "$ANDROID_HOME/ndk/28.2.13676358" "$WORK/android-ndk-r28c"
+          bash cam2you/engine/scripts/build-ffmpeg-android.sh
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: engine-android-cargo-${{ hashFiles('cam2you/engine/Cargo.lock') }}
+          restore-keys: engine-android-cargo-
 
       - name: Signing key
         env:
@@ -379,9 +399,16 @@ jobs:
             define=(--dart-define-from-file=build_config.json)
           fi
           flutter pub get
+          source engine/scripts/env-cam2you-android.sh
           flutter build apk --release --target-platform android-arm64,android-x64 "${define[@]}"
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          # Flutter makes an APK without the engine when its build fails: it must be there.
+          for lib in libcam2you_engine.so libavcodec.so libc++_shared.so; do
+            unzip -l "$apk" | grep -q "lib/arm64-v8a/$lib" || { echo "::error::No $lib in the APK"; exit 1; }
+          done
+          unzip -l "$apk" | grep -E 'lib/arm64-v8a/(libcam2you_engine|libav)' | awk '{print $1, $4}'
           mkdir -p ../dist
-          cp build/app/outputs/flutter-apk/app-release.apk "../dist/Cam2You-$VERSION.apk"
+          cp "$apk" "../dist/Cam2You-$VERSION.apk"
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
           "$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | grep -E 'certificate (DN|SHA-256)'
           ls -l ../dist
@@ -431,94 +458,6 @@ jobs:
           path: dist/*.apk
           if-no-files-found: error
 
-  # Montage for Android (64-bit ARM, as its core is built): FFmpeg built for
-  # Android first (kept in the cache while its script is the same), then the
-  # Rust core with whisper.cpp through cargokit, as scripts/build-android.ps1
-  # does in Windows.
-  montage-android:
-    needs: prepare
-    if: contains(inputs.platforms, 'android')
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    continue-on-error: true
-    env:
-      MONTAGE_VERSION: ${{ needs.prepare.outputs.montage_version }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: TIE-Channel/Montage
-          ref: ${{ needs.prepare.outputs.montage }}
-          token: ${{ secrets.SOURCE_TOKEN }}
-          path: Montage
-          persist-credentials: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
-      - name: Tools and NDK
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q meson ninja-build pkg-config xxd
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;28.2.13676358' > /dev/null
-
-      - uses: actions/cache@v4
-        id: ffmpeg
-        with:
-          path: Montage/third_party/ffmpeg-android
-          key: montage-ffmpeg-android-${{ hashFiles('Montage/scripts/build-ffmpeg-android.sh') }}
-      - name: FFmpeg for Android
-        if: steps.ffmpeg.outputs.cache-hit != 'true'
-        run: WORK="$RUNNER_TEMP/ffmpeg-android" bash Montage/scripts/build-ffmpeg-android.sh
-
-      - name: Signing key
-        env:
-          ANDROID_SIGNING: ${{ secrets.ANDROID_SIGNING }}
-        run: |
-          python3 - <<'PY'
-          import base64, json, os
-          signing = os.environ.get('ANDROID_SIGNING')
-          if not signing:
-              print('A throwaway debug key: no ANDROID_SIGNING secret')
-              raise SystemExit
-          key = json.loads(signing)
-          print(f"::add-mask::{key['password']}")
-          path = os.path.join(os.environ['RUNNER_TEMP'], 'tie-games.p12')
-          with open(path, 'wb') as f:
-              f.write(base64.b64decode(key['keystore']))
-          with open(os.environ['GITHUB_ENV'], 'a') as env:
-              env.write(f"ANDROID_KEYSTORE={path}\nANDROID_KEYSTORE_PASSWORD={key['password']}\n")
-              env.write(f"ANDROID_KEY_ALIAS={key.get('alias', 'tie-games')}\n")
-          PY
-
-      - name: Montage
-        working-directory: Montage
-        run: |
-          source scripts/env-android.sh
-          cd app
-          flutter pub get
-          flutter build apk --release --target-platform android-arm64
-          apk=build/app/outputs/flutter-apk/app-release.apk
-          # Flutter makes an APK without the core when its build fails: it must be there.
-          for lib in libmontage_bridge.so libavcodec.so libc++_shared.so; do
-            unzip -l "$apk" | grep -q "lib/arm64-v8a/$lib" || { echo "::error::No $lib in Montage's APK"; exit 1; }
-          done
-          mkdir -p ../../dist
-          cp "$apk" "../../dist/Montage-$MONTAGE_VERSION.apk"
-          ls -l ../../dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-montage-android
-          path: dist/*.apk
-          if-no-files-found: error
-
   linux:
     needs: prepare
     if: contains(inputs.platforms, 'linux')
@@ -526,9 +465,7 @@ jobs:
     secrets: inherit
     with:
       cam2you: ${{ needs.prepare.outputs.cam2you }}
-      montage: ${{ needs.prepare.outputs.montage }}
       version: ${{ needs.prepare.outputs.version }}
-      montage_version: ${{ needs.prepare.outputs.montage_version }}
 
   macos:
     needs: prepare
@@ -537,9 +474,7 @@ jobs:
     secrets: inherit
     with:
       cam2you: ${{ needs.prepare.outputs.cam2you }}
-      montage: ${{ needs.prepare.outputs.montage }}
       version: ${{ needs.prepare.outputs.version }}
-      montage_version: ${{ needs.prepare.outputs.montage_version }}
 
   ios:
     needs: prepare
@@ -548,14 +483,12 @@ jobs:
     secrets: inherit
     with:
       cam2you: ${{ needs.prepare.outputs.cam2you }}
-      montage: ${{ needs.prepare.outputs.montage }}
       version: ${{ needs.prepare.outputs.version }}
-      montage_version: ${{ needs.prepare.outputs.montage_version }}
 
   # Every platform built must have succeeded (one left out by Platforms is
-  # skipped); Montage for Android may have failed.
+  # skipped).
   release:
-    needs: [prepare, windows, android, montage-android, linux, macos, ios]
+    needs: [prepare, windows, android, linux, macos, ios]
     if: >-
       ${{ always() && inputs.release != 'none' && needs.prepare.result == 'success'
       && contains(fromJSON('["success", "skipped"]'), needs.windows.result)
@@ -588,13 +521,11 @@ jobs:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
           VERSION: ${{ needs.prepare.outputs.version }}
           TAG: ${{ needs.prepare.outputs.tag }}
-          MONTAGE_VERSION: ${{ needs.prepare.outputs.montage_version }}
           PUBLISH: ${{ inputs.release == 'publish' }}
         run: |
           require=()
           if [ "$PUBLISH" = true ]; then require=(--require-key); fi
-          python3 site/.github/scripts/update-manifest.py dist --tag "$TAG" --version "$VERSION" \
-            --montage-version "$MONTAGE_VERSION" "${require[@]}"
+          python3 site/.github/scripts/update-manifest.py dist --tag "$TAG" --version "$VERSION" "${require[@]}"
 
       - name: Release
         working-directory: dist
@@ -602,31 +533,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
           TAG: ${{ needs.prepare.outputs.tag }}
-          MONTAGE_VERSION: ${{ needs.prepare.outputs.montage_version }}
           CAM2YOU: ${{ needs.prepare.outputs.cam2you }}
-          MONTAGE: ${{ needs.prepare.outputs.montage }}
           PUBLISH: ${{ inputs.release == 'publish' }}
           REPLACE: ${{ inputs.replace }}
         run: |
-          montage_apk="Montage-$MONTAGE_VERSION.apk"
           {
             echo "Cam2You $VERSION."
             echo
             if [ -f "Cam2You-Setup-$VERSION.exe" ]; then
               echo '**Windows** 10 and 11, 64-bit:'
               echo
-              echo "- **Cam2You-Setup-$VERSION.exe**: everything in one — Cam2You, and Montage (ticked; it edits your videos into one film by itself)."
-              echo "- **Cam2You-Web-Setup-$VERSION.exe**: the small one — asks the same, then downloads from this release only what you choose."
-              echo '- Cam2You-Only-Setup and Montage-Setup: what the small one downloads.'
+              echo "- **Cam2You-Setup-$VERSION.exe**: everything in one, Auto-edit included."
+              echo "- **Cam2You-Web-Setup-$VERSION.exe**: the small one — asks the same, then downloads Cam2You from this release."
+              echo '- Cam2You-Only-Setup: what the small one and the updates download.'
               echo
             fi
             if [ -f "Cam2You-$VERSION.apk" ]; then
               echo '**Android** 10 or newer:'
               echo
               echo "- **Cam2You-$VERSION.apk**: open it on the phone to install Cam2You (the first time, Android asks you to allow your browser to install apps)."
-              if [ -f "$montage_apk" ]; then
-                echo "- **$montage_apk**: Montage, for Auto-edit on the phone (64-bit ARM phones)."
-              fi
               echo
             fi
             # The other platforms' own lines, in their order (3-linux.md, 4-macos.md, …).
@@ -634,15 +559,12 @@ jobs:
               cat "$notes"
               echo
             done
-            echo "Built from cam2you ${CAM2YOU:0:7} and Montage ${MONTAGE:0:7}."
+            echo "Built from cam2you ${CAM2YOU:0:7}."
             echo
             echo '```'
             sha256sum -- * | sort -k2
             echo '```'
           } > ../notes.md
-          if [ -f "Cam2You-$VERSION.apk" ] && [ ! -f "$montage_apk" ]; then
-            echo "::warning::Montage's Android build failed: the release has no $montage_apk"
-          fi
           if [ "$REPLACE" = true ]; then
             gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes > /dev/null 2>&1 || true
           fi
