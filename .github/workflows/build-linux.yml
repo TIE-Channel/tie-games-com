@@ -69,7 +69,10 @@ jobs:
           channel: stable
           cache: true
 
-      - uses: actions/cache@v4
+      # Kept while their scripts stay the same, saved as soon as they are
+      # built (even when a later step fails).
+      - uses: actions/cache/restore@v4
+        id: native
         with:
           path: |
             cam2you/third_party/ffmpeg
@@ -81,6 +84,13 @@ jobs:
           flutter pub get > /dev/null
           dart run tool/fetch_ffmpeg.dart
           bash tool/build_libmpv.sh
+      - uses: actions/cache/save@v4
+        if: steps.native.outputs.cache-hit != 'true'
+        with:
+          path: |
+            cam2you/third_party/ffmpeg
+            cam2you/third_party/libmpv
+          key: ${{ steps.native.outputs.cache-primary-key }}
 
       - name: Cam2You
         working-directory: cam2you
