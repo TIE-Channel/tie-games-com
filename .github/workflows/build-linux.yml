@@ -6,9 +6,11 @@
 # One file, Cam2You-<version>-x86_64.AppImage (cam2you's SPEC §13.1), built
 # on Ubuntu 22.04, the oldest system it is for: the app with the LGPL FFmpeg
 # (BtbN's build, tool/fetch_ffmpeg.dart) and an LGPL libmpv built on it
-# (tool/build_libmpv.sh), packed by tool/build_appimage.sh. Then it is started
-# under Xvfb as a user starts it, with its self-check and two clips to join:
-# it must still run after 40 s, with its database and a passing self-check.
+# (tool/build_libmpv.sh), and Auto-edit's engine (cam2you's engine/, Rust)
+# built against the same FFmpeg, packed by tool/build_appimage.sh. Then it is
+# started under Xvfb as a user starts it, with its self-check and two clips to
+# join and auto-edit: it must still run after 40 s, with its database and a
+# passing self-check, the engine's included.
 name: Build Linux
 
 on:
@@ -31,7 +33,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       VERSION: ${{ inputs.version }}
     steps:
@@ -48,7 +50,7 @@ jobs:
       - name: Tools
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev \
+          sudo apt-get install -y -q clang libclang-dev cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev \
             libsecret-1-dev libepoxy-dev libass-dev libpulse-dev libasound2-dev zlib1g-dev patchelf \
             fuse3 xvfb xauth imagemagick > /dev/null
           pipx install meson==1.6.1 > /dev/null
@@ -59,6 +61,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: dtolnay/rust-toolchain@stable
 
       # Kept while their scripts stay the same, saved as soon as they are
       # built (even when a later step fails).
@@ -83,6 +86,22 @@ jobs:
             cam2you/third_party/libmpv
           key: ${{ steps.native.outputs.cache-primary-key }}
 
+      # The engine's crates, and its build (cargokit's) while Cargo.lock is
+      # the same.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            cam2you/build/linux/x64/release/plugins/cam2you_engine/cargokit_build
+          key: engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
+            engine-linux-
+
+      # With Auto-edit's engine (engine/scripts/env-cam2you-linux.sh sets
+      # CAM2YOU_ENGINE=1), against the FFmpeg above.
       - name: Cam2You
         working-directory: cam2you
         env:
@@ -93,7 +112,12 @@ jobs:
             printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
             define=(--dart-define-from-file=build_config.json)
           fi
+          unset BUILD_CONFIG_JSON
+          source engine/scripts/env-cam2you-linux.sh
           flutter build linux --release ${define[@]+"${define[@]}"}
+          engine=build/linux/x64/release/bundle/lib/libcam2you_engine.so
+          if [ ! -f "$engine" ]; then echo "::error::No engine in the build: $engine"; exit 1; fi
+          echo "The engine: $(stat -c %s "$engine") bytes"
 
       - name: AppImage
         working-directory: cam2you
@@ -126,7 +150,7 @@ jobs:
           HOME="$TRY_HOME" CAM2YOU_SELF_CHECK=1 "$TRY_IMAGE" > test/cam2you-linux.log 2>&1 &
           pid=$!
           # At least 40 s; the self-check ends within its time limits.
-          for i in $(seq 1 180); do
+          for i in $(seq 1 480); do
             if [ -f "$TRY_SUPPORT/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
             kill -0 "$pid" 2> /dev/null || break
             sleep 1
@@ -151,14 +175,14 @@ jobs:
           import json, sys
           check = json.load(open('test/self-check.json'))
           failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
-          for name in ('storage', 'database', 'ffmpeg', 'render'):
+          for name in ('storage', 'database', 'ffmpeg', 'render', 'engine', 'auto-edit'):
               if name not in check:
                   failed.append(name + ' (not checked)')
           if failed:
               print('::error::Cam2You self-check failed: ' + ', '.join(failed))
               sys.exit(1)
           f = check['ffmpeg']
-          print('Cam2You starts on Linux: %s; database, FFmpeg (%s, %s) and a joined video'
+          print('Cam2You starts on Linux: %s; database, FFmpeg (%s, %s), a joined video and an auto-edited one'
                 % (check['storage'].get('detail'), f['h264'], f['hevc']))
           PY
 

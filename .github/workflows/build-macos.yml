@@ -8,11 +8,12 @@
 # updates replace the installed app with the one in it. The app carries an
 # LGPL FFmpeg built here from source with Apple's VideoToolbox encoders
 # (cam2you's tool/build_ffmpeg_macos.sh; kept in the cache while that script
-# is the same). Before the upload the disk image is opened, the app copied out
-# and started: it must still run after 40 s, with its database made and its
-# self-check passed (keychain, database, FFmpeg and its encoders, a video
-# joined with a crossfade); a screenshot and the self-check are the artifact
-# macos-test.
+# is the same), whose shared libraries Auto-edit's engine (cam2you's engine/,
+# Rust, built for both halves) loads too. Before the upload the disk image is
+# opened, the app copied out and started: it must still run after 40 s, with
+# its database made and its self-check passed (keychain, database, FFmpeg and
+# its encoders, a video joined with a crossfade, the engine and a video it
+# auto-edits); a screenshot and the self-check are the artifact macos-test.
 #
 # Signing: without secrets the app is signed ad hoc (it runs; macOS asks the
 # user once to open it anyway). Optional repository secrets for a Developer ID
@@ -68,20 +69,9 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Cam2You
-        working-directory: cam2you
-        env:
-          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
-        run: |
-          define=()
-          if [ -n "$BUILD_CONFIG_JSON" ]; then
-            printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
-            define=(--dart-define-from-file=build_config.json)
-          fi
-          flutter pub get
-          flutter build macos --release ${define[@]+"${define[@]}"}
-
-      - uses: actions/cache@v4
+      # FFmpeg first: the engine is built against its libraries. Saved as
+      # soon as it is built (even when a later step fails).
+      - uses: actions/cache/restore@v4
         id: ffmpeg
         with:
           path: cam2you/third_party/ffmpeg-macos
@@ -92,6 +82,52 @@ jobs:
         run: |
           brew install nasm > /dev/null
           WORK="$RUNNER_TEMP/ffmpeg" bash tool/build_ffmpeg_macos.sh third_party/ffmpeg-macos
+      - uses: actions/cache/save@v4
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        with:
+          path: cam2you/third_party/ffmpeg-macos
+          key: ${{ steps.ffmpeg.outputs.cache-primary-key }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      # The engine's crates, and its build (cargokit's, in the pod's folder)
+      # while Cargo.lock is the same.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/aarch64-apple-darwin
+            cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/x86_64-apple-darwin
+            cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/release
+          key: engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
+            engine-macos-
+
+      # With Auto-edit's engine (engine/scripts/env-cam2you-macos.sh sets
+      # CAM2YOU_ENGINE=1 and what it links to).
+      - name: Cam2You
+        working-directory: cam2you
+        env:
+          BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
+        run: |
+          define=()
+          if [ -n "$BUILD_CONFIG_JSON" ]; then
+            printf '%s' "$BUILD_CONFIG_JSON" > build_config.json
+            define=(--dart-define-from-file=build_config.json)
+          fi
+          unset BUILD_CONFIG_JSON
+          flutter pub get
+          source engine/scripts/env-cam2you-macos.sh
+          flutter build macos --release ${define[@]+"${define[@]}"}
+          engine=build/macos/Build/Products/Release/Cam2You.app/Contents/Frameworks/cam2you_engine.framework
+          if [ ! -d "$engine" ]; then echo "::error::No engine in the build: $engine"; exit 1; fi
+          lipo -archs "$engine/cam2you_engine"
+          otool -L "$engine/cam2you_engine" | grep -E 'libav|libsw' | sort -u
+          du -sh "$engine"
 
       # A Developer ID signature when the secrets are there (see the top).
       - name: Signing identity
@@ -143,7 +179,7 @@ jobs:
           app="$apps/Cam2You.app"
           codesign --verify --deep --strict "$app"
           lipo -archs "$app/Contents/MacOS/Cam2You"
-          ls -l "$app/Contents/Helpers/ffmpeg" || true
+          ls -l "$app/Contents/Helpers/ffmpeg" "$app/Contents/Frameworks" || true
 
           support="$HOME/Library/Application Support/com.tiegames.cam2you"
           mkdir -p "$support/SelfCheck"
@@ -152,7 +188,7 @@ jobs:
           CAM2YOU_SELF_CHECK=1 "$app/Contents/MacOS/Cam2You" > test/cam2you-macos.log 2>&1 &
           pid=$!
           # At least 40 s; the self-check ends within its time limits.
-          for i in $(seq 1 300); do
+          for i in $(seq 1 600); do
             if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
             kill -0 "$pid" 2> /dev/null || break
             sleep 1
@@ -172,14 +208,14 @@ jobs:
           import json, sys
           check = json.load(open('test/self-check.json'))
           failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
-          for name in ('storage', 'database', 'ffmpeg', 'render'):
+          for name in ('storage', 'database', 'ffmpeg', 'render', 'engine', 'auto-edit'):
               if name not in check:
                   failed.append(name + ' (not checked)')
           if failed:
               print('::error::Cam2You self-check failed: ' + ', '.join(failed))
               sys.exit(1)
           f = check['ffmpeg']
-          print('Cam2You starts on macOS: keychain, database, FFmpeg (%s, %s) and a joined video' % (f['h264'], f['hevc']))
+          print('Cam2You starts on macOS: keychain, database, FFmpeg (%s, %s), a joined video and an auto-edited one' % (f['h264'], f['hevc']))
           PY
 
       - uses: actions/upload-artifact@v4
