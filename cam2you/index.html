@@ -170,8 +170,8 @@
 
 <section class="download" id="download">
   <h2>Download</h2>
-  <!-- Both filled from the newest cam2you-v* release of github.com/TIE-Channel/tie-games-com (script below);
-       on an Android phone, Android comes first. -->
+  <!-- The buttons are filled from the newest cam2you-v* releases of github.com/TIE-Channel/tie-games-com
+       (script below); the visitor's own system comes first. -->
   <div id="systems">
     <div class="system" id="windows">
       <p class="platform">WINDOWS 10 AND 11, 64-BIT</p>
@@ -201,6 +201,32 @@
         <li>Later Cam2You installs its new versions itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
       </ul>
     </div>
+    <div class="system" id="mac">
+      <p class="platform">MACOS 12 OR NEWER, APPLE SILICON AND INTEL</p>
+      <div id="download-mac">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Mac</a></p>
+      </div>
+      <ul>
+        <li>Open the downloaded disk image and drag Cam2You into <em>Applications</em>.</li>
+        <li>Cam2You isn't notarized by Apple yet, so the first time you start it macOS says it can't check it: click <em>Done</em>, open <em>System Settings &rarr; Privacy &amp; Security</em>, and next to <em>&ldquo;Cam2You&rdquo; was blocked</em> click <em>Open Anyway</em>. On macOS 14 and older, Control-click Cam2You in <em>Applications</em> and choose <em>Open</em>.</li>
+        <li>Later Cam2You updates itself: click <em>Update</em> when it says a new version is out.</li>
+      </ul>
+    </div>
+    <div class="system" id="linux">
+      <p class="platform">LINUX, 64-BIT (UBUNTU 22.04 OR NEWER, FEDORA AND THE LIKE)</p>
+      <div id="download-linux">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Linux</a></p>
+      </div>
+      <ul>
+        <li>One file, nothing to install: make it executable (in its <em>Properties</em>, <em>Allow executing file as program</em>, or <code>chmod +x</code>) and open it.</li>
+        <li>Your YouTube sign-in is kept in the system's keyring (GNOME Keyring, KWallet).</li>
+        <li>Later Cam2You updates itself: click <em>Update</em> when it says a new version is out.</li>
+      </ul>
+    </div>
+    <div class="system" id="iphone">
+      <p class="platform">IPHONE AND IPAD</p>
+      <p>Cam2You for iPhone and iPad is coming to the App Store.</p>
+    </div>
   </div>
 </section>
 
@@ -212,8 +238,9 @@
   <li><strong>Suggests names</strong> from where and when the videos were recorded, such as <em>Rovinj, Croatia (August 2026)</em>, using the camera's GPS and a place database built into the app.</li>
   <li><strong>Edits by itself</strong> (Pro): with Auto-edit, the videos you upload become one film, cut and put together on your device, with music if you like.</li>
   <li><strong>Uploads reliably</strong>: a queue that resumes after interruptions and waits for YouTube's daily limits.</li>
+  <li><strong>Moves videos between your devices</strong>: PeerLink sends them between your phone and your computer on the same network, and Cam2You opens folders shared on your network (SMB, FTP).</li>
 </ul>
-<p>Cam2You runs on Windows and Android; an iPhone version is planned.</p>
+<p>Cam2You runs on Windows, macOS, Linux and Android, in 12 languages; the iPhone version is coming to the App Store. The Free plan uploads a few videos a day to one channel; Pro lifts the limits and adds Auto-edit and Music, with 30 days of Pro free to try.</p>
 
 <h2>How Cam2You uses your Google account</h2>
 <p>To upload, you connect your YouTube channel with Google sign-in. Cam2You asks for access to your YouTube account (<code>https://www.googleapis.com/auth/youtube</code>) and uses it only to:</p>
@@ -243,18 +270,23 @@
 <script>
 // The download links: the newest Cam2You release (tag cam2you-v<version>) of
 // the site's repository — for Windows its full installer and the small one
-// that downloads what it installs, for Android Cam2You's APK. Without one, or without GitHub's API, the buttons above lead to
-// the releases page.
+// that downloads what it installs, for Android the APK, for Macs the disk
+// image, for Linux the AppImage. Without one, or without GitHub's API, the
+// buttons above lead to the releases page.
 (function () {
   var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
-  // On an Android phone, Android first.
+  // The visitor's own system first (an iPad says it is a Mac, but has a touch screen).
   var ua = navigator.userAgent;
+  var systems = document.getElementById('systems');
+  function first(id) { systems.insertBefore(document.getElementById(id), systems.firstElementChild); }
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) first('iphone');
+  else if (/Macintosh|Mac OS X/.test(ua)) first('mac');
+  else if (/Linux/.test(ua) && !/Android/i.test(ua)) first('linux');
   if (/Android/i.test(ua)) {
-    var systems = document.getElementById('systems');
-    systems.insertBefore(document.getElementById('android'), document.getElementById('windows'));
+    first('android');
     // Opened inside another app (its WebView: "; wv)" in the user agent):
     // most of them can't download, so the page asks to be opened in Chrome.
     if (/; wv\)|FBAN|FBAV|Instagram|Telegram|MicroMessenger|Line\//.test(ua)) {
@@ -295,17 +327,22 @@
         }
       }
 
-      // The newest release with an APK (the first ones had none).
-      var android = document.getElementById('download-android');
-      var withApk = cam2you.filter(function (r) { return asset(r, /^Cam2You-[\d.]+\.apk$/); })[0];
-      if (!withApk) {
-        android.innerHTML = '<p>The Android app is coming soon.</p>';
-        return;
+      // Android, Mac and Linux: the newest release with that system's file
+      // (the first releases had only Windows).
+      function fill(id, re, name) {
+        var box = document.getElementById(id);
+        var withFile = cam2you.filter(function (r) { return asset(r, re); })[0];
+        if (!withFile) {
+          box.innerHTML = '<p>Cam2You for ' + name + ' is coming soon.</p>';
+          return;
+        }
+        var file = asset(withFile, re);
+        box.innerHTML = '<p><a class="button" href="' + esc(file.browser_download_url) + '">Download Cam2You ' + esc(version(withFile)) + ' for ' + name + '</a></p>' +
+          '<p class="file">' + esc(file.name) + ' &middot; ' + mb(file.size) + ' &middot; ' + esc(date(withFile)) + '</p>';
       }
-      var apk = asset(withApk, /^Cam2You-[\d.]+\.apk$/);
-      var text = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Cam2You ' + esc(version(withApk)) + ' for Android</a></p>' +
-        '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk));
-      android.innerHTML = text + '</p>';
+      fill('download-android', /^Cam2You-[\d.]+\.apk$/, 'Android');
+      fill('download-mac', /^Cam2You-[\d.]+\.dmg$/, 'Mac');
+      fill('download-linux', /^Cam2You-[\d.]+-x86_64\.AppImage$/, 'Linux');
     })
     .catch(function () { /* the buttons to the releases page stay */ });
 })();
