@@ -3,11 +3,14 @@
 # the artifact dist-ios, with their lines for the release notes as
 # notes-ios (a Markdown file).
 #
+# Both builds carry Auto-edit's engine (cam2you's engine/, Rust) and the LGPL
+# FFmpeg it uses, as frameworks (cam2you's tool/build_ffmpeg_ios.sh, for
+# iPhones and the simulator; kept in the cache while that script is the same).
 # First a build for the simulator is installed and started on an iPhone
 # simulator: it must still run after 40 s, with its database made and its
-# self-check passed (keychain, database, and two clips joined by the
-# AVFoundation renderer); a screenshot and the self-check are the artifact
-# ios-test. Then the release build for iPhones, packed as
+# self-check passed (keychain, database, two clips joined by the AVFoundation
+# renderer, the engine loaded and the clips auto-edited); a screenshot and the
+# self-check are the artifact ios-test. Then the release build for iPhones, packed as
 # Cam2You-<version>-unsigned.ipa: an iPhone installs only signed apps, so
 # installing it needs the Apple Developer Program (TestFlight, the App Store)
 # or a sideloading tool that signs it with the user's own Apple ID.
@@ -33,7 +36,7 @@ env:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 180
     env:
       VERSION: ${{ inputs.version }}
     steps:
@@ -54,6 +57,34 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: engine-ios-cargo-${{ hashFiles('cam2you/engine/Cargo.lock') }}
+          restore-keys: engine-ios-cargo-
+      # FFmpeg for the engine, saved as soon as it is built (even when a
+      # later step fails).
+      - uses: actions/cache/restore@v4
+        id: ffmpeg
+        with:
+          path: cam2you/third_party/ffmpeg-ios
+          key: cam2you-ffmpeg-ios-${{ hashFiles('cam2you/tool/build_ffmpeg_ios.sh') }}
+      - name: FFmpeg for iOS (LGPL, frameworks)
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        working-directory: cam2you
+        run: WORK="$RUNNER_TEMP/ffmpeg" bash tool/build_ffmpeg_ios.sh third_party/ffmpeg-ios
+      - uses: actions/cache/save@v4
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        with:
+          path: cam2you/third_party/ffmpeg-ios
+          key: ${{ steps.ffmpeg.outputs.cache-primary-key }}
+
       - name: Build config
         env:
           BUILD_CONFIG_JSON: ${{ secrets.BUILD_CONFIG_JSON }}
@@ -65,9 +96,19 @@ jobs:
           fi
           flutter pub get
 
+      # With the engine (engine/scripts/env-cam2you-ios.sh sets
+      # CAM2YOU_ENGINE=1, and builds it optimized in this debug build).
       - name: Cam2You for the simulator
         working-directory: cam2you
-        run: flutter build ios --simulator --debug ${DEFINE:-}
+        run: |
+          source engine/scripts/env-cam2you-ios.sh iphonesimulator
+          flutter build ios --simulator --debug ${DEFINE:-}
+          app=build/ios/iphonesimulator/Cam2You.app
+          for framework in cam2you_engine libavcodec libavformat libavfilter libavutil libswscale libswresample; do
+            if [ ! -d "$app/Frameworks/$framework.framework" ]; then echo "::error::No $framework.framework in the app"; exit 1; fi
+          done
+          lipo -archs "$app/Frameworks/cam2you_engine.framework/cam2you_engine"
+          du -sh "$app/Frameworks/cam2you_engine.framework"
 
       - name: Start on an iPhone simulator
         run: |
@@ -100,7 +141,7 @@ jobs:
           SIMCTL_CHILD_CAM2YOU_SELF_CHECK=1 xcrun simctl launch --stdout="$PWD/test/cam2you-ios.log" \
             --stderr="$PWD/test/cam2you-ios.log" "$device" com.tiegames.cam2you
           # At least 40 s; the self-check ends within its time limits.
-          for i in $(seq 1 300); do
+          for i in $(seq 1 600); do
             if [ -f "$support/self-check.json" ] && [ "$i" -ge 40 ]; then break; fi
             sleep 1
           done
@@ -121,13 +162,16 @@ jobs:
           import json, sys
           check = json.load(open('test/self-check.json'))
           failed = [name for name, c in check.items() if isinstance(c, dict) and not c.get('ok')]
-          for name in ('storage', 'database', 'render'):
+          for name in ('storage', 'database', 'render', 'engine', 'auto-edit'):
               if name not in check:
                   failed.append(name + ' (not checked)')
           if failed:
               print('::error::Cam2You self-check failed: ' + ', '.join(failed))
               sys.exit(1)
-          print('Cam2You starts on the iPhone simulator: keychain, database and a video joined by AVFoundation')
+          print('Cam2You starts on the iPhone simulator: keychain, database, a video joined by AVFoundation and one auto-edited by the engine')
+          e, a = check['engine'], check['auto-edit']
+          print('::notice title=iOS simulator self-check::engine %s, speech %s, music plan %s ms; auto-edit %s bytes in %s ms'
+                % (e.get('version'), e.get('speech'), e.get('took_ms'), a.get('bytes'), a.get('took_ms')))
           PY
           xcrun simctl shutdown "$device" || true
 
@@ -141,11 +185,18 @@ jobs:
       - name: Cam2You for iPhones (unsigned)
         working-directory: cam2you
         run: |
+          source engine/scripts/env-cam2you-ios.sh iphoneos
           flutter build ios --release --no-codesign ${DEFINE:-}
+          app=build/ios/iphoneos/Cam2You.app
+          for framework in cam2you_engine libavcodec libavformat libavfilter libavutil libswscale libswresample; do
+            if [ ! -d "$app/Frameworks/$framework.framework" ]; then echo "::error::No $framework.framework in the app"; exit 1; fi
+          done
+          du -sh "$app/Frameworks"/*.framework | sort -h | tail -8
           mkdir -p ../ipa/Payload ../dist
           ditto build/ios/iphoneos/Cam2You.app ../ipa/Payload/Cam2You.app
           (cd ../ipa && zip -qry "../dist/Cam2You-$VERSION-unsigned.ipa" Payload)
           ls -l ../dist
+          echo "::notice title=iOS ipa::Cam2You-$VERSION-unsigned.ipa $(stat -f %z "../dist/Cam2You-$VERSION-unsigned.ipa") bytes"
 
       - name: Notes
         run: |

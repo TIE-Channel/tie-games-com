@@ -223,6 +223,8 @@ jobs:
           }
           dart run tool/build_installer.dart
           Get-ChildItem build/installer/*.exe | Format-Table Name, Length
+          $sizes = (Get-ChildItem build/installer/*.exe | ForEach-Object { "$($_.Name) $($_.Length) bytes" }) -join '; '
+          "::notice title=Windows installers::$sizes"
 
       # The full installer as a user runs it, unattended: Cam2You installed
       # for this user, started with its self-check (two clips to join and
@@ -288,6 +290,8 @@ jobs:
           if (-not $json.'auto-edit'.ok) { throw "Auto-edit did not work: $($json.'auto-edit'.error)" }
           if (-not $json.ok) { '::warning::Not every self-check passed (see above)' }
           'The engine loads and auto-edits'
+          $e = $json.engine; $a = $json.'auto-edit'
+          "::notice title=Windows self-check::engine $($e.version), speech $($e.speech), music plan $($e.took_ms) ms; auto-edit $($a.bytes) bytes in $($a.took_ms) ms; all checks ok: $($json.ok)"
 
           $app = "$programs\Cam2You"
           Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
@@ -409,6 +413,8 @@ jobs:
           unzip -l "$apk" | grep -E 'lib/arm64-v8a/(libcam2you_engine|libav)' | awk '{print $1, $4}'
           mkdir -p ../dist
           cp "$apk" "../dist/Cam2You-$VERSION.apk"
+          engine=$(unzip -l "$apk" | awk '$4 == "lib/arm64-v8a/libcam2you_engine.so" { print $1 }')
+          echo "::notice title=Android APK::Cam2You-$VERSION.apk $(stat -c %s "../dist/Cam2You-$VERSION.apk") bytes; the engine $engine bytes uncompressed"
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
           "$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | grep -E 'certificate (DN|SHA-256)'
           ls -l ../dist

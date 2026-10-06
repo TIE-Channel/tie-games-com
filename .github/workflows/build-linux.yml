@@ -184,7 +184,11 @@ jobs:
           f = check['ffmpeg']
           print('Cam2You starts on Linux: %s; database, FFmpeg (%s, %s), a joined video and an auto-edited one'
                 % (check['storage'].get('detail'), f['h264'], f['hevc']))
+          e, a = check['engine'], check['auto-edit']
+          print('::notice title=Linux self-check::engine %s, speech %s, music plan %s ms; auto-edit %s bytes in %s ms'
+                % (e.get('version'), e.get('speech'), e.get('took_ms'), a.get('bytes'), a.get('took_ms')))
           PY
+          echo "::notice title=Linux AppImage::Cam2You-$VERSION-x86_64.AppImage $(stat -c %s "$image") bytes"
 
       - uses: actions/upload-artifact@v4
         if: always()
