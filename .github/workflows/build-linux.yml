@@ -95,10 +95,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             cam2you/build/linux/x64/release/plugins/cam2you_engine/cargokit_build
-          key: engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
-          restore-keys: |
-            engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
-            engine-linux-
+          # The build's environment too: Cargo doesn't notice whisper.cpp's
+          # settings in it (GGML_NATIVE).
+          key: engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-cam2you-linux.sh') }}-${{ github.run_id }}
+          restore-keys: engine-linux-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-cam2you-linux.sh') }}-
 
       # With Auto-edit's engine (engine/scripts/env-cam2you-linux.sh sets
       # CAM2YOU_ENGINE=1), against the FFmpeg above.

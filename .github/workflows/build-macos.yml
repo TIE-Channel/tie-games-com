@@ -102,10 +102,10 @@ jobs:
             cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/aarch64-apple-darwin
             cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/x86_64-apple-darwin
             cam2you/build/macos/Build/Intermediates.noindex/Pods.build/Release/cam2you_engine.build/release
-          key: engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
-          restore-keys: |
-            engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
-            engine-macos-
+          # The build's environment too: Cargo doesn't notice whisper.cpp's
+          # settings in it (GGML_NATIVE).
+          key: engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-cam2you-macos.sh') }}-${{ github.run_id }}
+          restore-keys: engine-macos-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-cam2you-macos.sh') }}-
 
       # With Auto-edit's engine (engine/scripts/env-cam2you-macos.sh sets
       # CAM2YOU_ENGINE=1 and what it links to).

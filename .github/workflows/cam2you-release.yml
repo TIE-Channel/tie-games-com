@@ -190,10 +190,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             C:\C\.ck
-          key: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock') }}-${{ github.run_id }}
-          restore-keys: |
-            engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock') }}-
-            engine-windows-
+          # The build's environment too: Cargo doesn't notice whisper.cpp's
+          # settings in it (GGML_NATIVE).
+          key: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-${{ github.run_id }}
+          restore-keys: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-
 
       # The app with the engine in it (CAM2YOU_ENGINE=1, set by the script),
       # against the same LGPL FFmpeg it bundles.
