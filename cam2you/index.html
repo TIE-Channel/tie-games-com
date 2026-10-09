@@ -138,6 +138,11 @@
   .download ul { font-size: 15px; margin-bottom: 0; }
   .download .inapp { border: 2px solid #b50026; padding: 4px 16px; margin-bottom: 16px; font-size: 15px; }
   .download .inapp[hidden] { display: none; }
+  .download .next { background: #f5f5f5; border-left: 4px solid #b50026; padding: 12px 16px 2px; margin-bottom: 16px; font-size: 15px; }
+  .download .next[hidden] { display: none; }
+  .download .next p { margin-bottom: 8px; }
+  .download .next ol { padding-left: 24px; margin-bottom: 10px; }
+  .download .next li { margin-bottom: 6px; color: #333; }
   .download ul li { margin-bottom: 6px; }
 
   @media (max-width: 520px) {
@@ -194,8 +199,17 @@
       <div id="download-android">
         <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Cam2You for Android</a></p>
       </div>
+      <!-- Shown once the download starts (script below). -->
+      <div class="next" id="android-next" hidden>
+        <p><strong>Downloading <span id="android-file">Cam2You</span>&hellip;</strong> It's a large file: give it a minute or two.</p>
+        <ol>
+          <li>When it's finished, tap <em>Open</em> in the message at the bottom of Chrome.</li>
+          <li>No <em>Open</em>, or the message is gone? Tap <strong>&#8942;</strong> at the top right of Chrome, then <em>Downloads</em>, and tap the file there. Or open the <em>Files</em> app (on Xiaomi phones <em>File Manager</em>), then <em>Downloads</em>, and tap the file.</li>
+          <li>Tap <em>Install</em>.</li>
+        </ol>
+      </div>
       <ul>
-        <li>Open this page in your phone's browser (Chrome — not inside another app) and tap the button. When the download is finished, tap <em>Open</em> (in the message at the bottom, or in your notifications), then <em>Install</em>.</li>
+        <li>Open this page in your phone's browser (Chrome — not inside another app) and tap the button. When the download is finished, tap <em>Open</em> in the message at the bottom, then <em>Install</em>. Missed it? Chrome's <strong>&#8942;</strong> &rarr; <em>Downloads</em> has the file: tap it there.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
         <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
         <li>Later Cam2You installs its new versions itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
@@ -295,6 +309,17 @@
         '#Intent;scheme=https;package=com.android.chrome;end';
     }
   }
+
+  // Android: once the APK starts downloading, what to do when it's done.
+  // Chrome says so only in a short message (its notification needs a
+  // permission many phones have off), and Android installs nothing by itself.
+  document.getElementById('download-android').addEventListener('click', function (e) {
+    var link = e.target.closest('a.button');
+    var name = link ? decodeURIComponent(link.href.split('/').pop()) : '';
+    if (!/\.apk$/.test(name)) return;
+    document.getElementById('android-file').textContent = name;
+    document.getElementById('android-next').hidden = false;
+  });
 
   fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
