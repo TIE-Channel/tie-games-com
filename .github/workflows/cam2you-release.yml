@@ -6,6 +6,9 @@
 # site's public repository, where Actions minutes are free; the sources stay
 # private: they are only checked out on the runners.
 #
+# The Android job also builds Google Play's App Bundle, kept as the workflow
+# artifact play-android (not in the release): it is uploaded to Play Console.
+#
 # The release also gets update.json, every desktop file with its SHA-256,
 # signed with the key in UPDATE_SIGNING_KEY (update.json.minisig, made by
 # .github/scripts/update-manifest.py): the desktop apps update themselves from
@@ -419,6 +422,27 @@ jobs:
           "$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | grep -E 'certificate (DN|SHA-256)'
           ls -l ../dist
 
+      # Google Play's App Bundle (cam2you's SPEC 13.2): without Cam2You's own
+      # updates and the permission they need (Play updates it), signed with the
+      # same key, which Play App Signing keeps as the app's signing key. Only a
+      # workflow artifact (play-android): users get it from Play.
+      - name: Google Play bundle
+        working-directory: cam2you
+        run: |
+          define=()
+          if [ -f build_config.json ]; then define=(--dart-define-from-file=build_config.json); fi
+          source engine/scripts/env-cam2you-android.sh
+          flutter build appbundle --release --target-platform android-arm64,android-x64 \
+            -Pcam2you.play=true --dart-define=CAM2YOU_STORE=play "${define[@]}"
+          aab=build/app/outputs/bundle/release/app-release.aab
+          unzip -l "$aab" | grep -q 'base/lib/arm64-v8a/libcam2you_engine.so' || { echo "::error::No engine in the bundle"; exit 1; }
+          if unzip -p "$aab" base/manifest/AndroidManifest.xml | grep -aq REQUEST_INSTALL_PACKAGES; then
+            echo "::error::The bundle asks to install packages"; exit 1
+          fi
+          mkdir -p ../play
+          cp "$aab" "../play/Cam2You-$VERSION.aab"
+          echo "::notice title=Google Play bundle::Cam2You-$VERSION.aab $(stat -c %s "../play/Cam2You-$VERSION.aab") bytes"
+
       # The emulator needs KVM, which the runner has but doesn't open to it.
       - name: KVM
         run: |
@@ -462,6 +486,11 @@ jobs:
         with:
           name: dist-android
           path: dist/*.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: play-android
+          path: play/*.aab
           if-no-files-found: error
 
   linux:
