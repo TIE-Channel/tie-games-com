@@ -439,10 +439,11 @@ jobs:
             # be the lineage's newest key. Signed again with it and the lineage, in
             # APK Signature Scheme v3 only (Android 9 and newer; Cam2You needs 10),
             # so that phones with the old key's Cam2You take it.
-            key=$("$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-            newest=$("$apksigner" lineage --in "$lineage" --print-certs | sed -n 's/^Signer #[0-9]* in lineage certificate SHA-256 digest: //p' | tail -1)
-            if [ "$key" != "$newest" ]; then
-              echo "::error::ANDROID_SIGNING is not the newest key of the signing lineage"; exit 1
+            # "Signer #1 certificate …" or, per scheme, "V2 Signer: certificate …".
+            key=$("$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
+            newest=$("$apksigner" lineage --in "$lineage" --print-certs | sed -n 's/.*in lineage certificate SHA-256 digest: //p' | tail -1)
+            if [ -z "$key" ] || [ "$key" != "$newest" ]; then
+              echo "::error::ANDROID_SIGNING (certificate SHA-256 ${key:-unknown}) is not the newest key of the signing lineage ($newest)"; exit 1
             fi
             "$apksigner" sign --ks "$ANDROID_KEYSTORE" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
               --lineage "$lineage" --rotation-min-sdk-version 28 --v1-signing-enabled false --v2-signing-enabled false \
