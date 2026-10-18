@@ -1,0 +1,56 @@
+# Hands Cam2You's Android signing over to a new key (Android's key rotation,
+# APK Signature Scheme v3: Android 9 and newer, every phone Cam2You runs on).
+# The key in ANDROID_SIGNING vouches for the one in ANDROID_SIGNING_NEXT (the
+# same JSON: "keystore", "password", "alias"); the proof, the signing lineage,
+# is the artifact android-signing-lineage. It holds only certificates and
+# signatures: it goes into this repository as .github/android/signing-lineage,
+# and the next key goes into ANDROID_SIGNING. Cam2You release then signs with
+# the new key and the lineage, and phones update as before.
+#
+# Run it by hand (Actions → Android signing lineage → Run workflow), once per
+# new key.
+name: Android signing lineage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lineage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lineage
+        env:
+          ANDROID_SIGNING: ${{ secrets.ANDROID_SIGNING }}
+          ANDROID_SIGNING_NEXT: ${{ secrets.ANDROID_SIGNING_NEXT }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os
+          tmp = os.environ['RUNNER_TEMP']
+          for name, file in (('ANDROID_SIGNING', 'old'), ('ANDROID_SIGNING_NEXT', 'new')):
+              if not os.environ.get(name):
+                  print(f'::error::No {name} secret'); raise SystemExit(1)
+              key = json.loads(os.environ[name])
+              print(f"::add-mask::{key['password']}")
+              with open(os.path.join(tmp, f'{file}.p12'), 'wb') as f:
+                  f.write(base64.b64decode(key['keystore']))
+              with open(os.path.join(tmp, f'{file}.pass'), 'w') as f:
+                  f.write(key['password'])
+              with open(os.path.join(tmp, f'{file}.alias'), 'w') as f:
+                  f.write(key.get('alias', 'tie-games'))
+          PY
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          t="$RUNNER_TEMP"
+          "$apksigner" rotate --out signing-lineage \
+            --old-signer --ks "$t/old.p12" --ks-key-alias "$(cat "$t/old.alias")" --ks-pass "file:$t/old.pass" \
+            --new-signer --ks "$t/new.p12" --ks-key-alias "$(cat "$t/new.alias")" --ks-pass "file:$t/new.pass"
+          rm "$t"/old.* "$t"/new.*
+          # Signer 1 must be the key of the released APKs (their certificate SHA-256), signer 2 the new one.
+          "$apksigner" lineage --in signing-lineage --print-certs | grep -E 'certificate (DN|SHA-256)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-lineage
+          path: signing-lineage
+          if-no-files-found: error

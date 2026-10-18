@@ -38,6 +38,14 @@
 #                      version must be signed with it, or Android won't
 #                      install it over the last one. A draft can do without
 #                      (a throwaway key, not to be installed over a release).
+#                      A new key takes over with Android's key rotation: the
+#                      key before it vouches for it in
+#                      .github/android/signing-lineage (made by
+#                      android-signing-lineage.yml), and the APK is signed
+#                      with the new key and that lineage. The emulator test
+#                      installs each APK over the release before it.
+#   ANDROID_SIGNING_NEXT only while a new key takes over: that key, for
+#                      android-signing-lineage.yml.
 #   UPDATE_SIGNING_KEY the key that signs update.json, which the desktop apps
 #                      update themselves from (cam2you's SPEC §13.1): an
 #                      unencrypted minisign secret key (minisign -G -W), the
@@ -335,6 +343,12 @@ jobs:
           token: ${{ secrets.SOURCE_TOKEN }}
           path: cam2you
           persist-credentials: false
+      # The signing lineage, when a new key has taken over (see the top of this file).
+      - uses: actions/checkout@v4
+        with:
+          path: site
+          sparse-checkout: .github/android
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -419,6 +433,22 @@ jobs:
           engine=$(unzip -l "$apk" | awk '$4 == "lib/arm64-v8a/libcam2you_engine.so" { print $1 }')
           echo "::notice title=Android APK::Cam2You-$VERSION.apk $(stat -c %s "../dist/Cam2You-$VERSION.apk") bytes; the engine $engine bytes uncompressed"
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          lineage=../site/.github/android/signing-lineage
+          if [ -f "$lineage" ] && [ -n "${ANDROID_KEYSTORE:-}" ]; then
+            # A new key has taken over (see the top of this file): ANDROID_SIGNING must
+            # be the lineage's newest key. Signed again with it and the lineage, in
+            # APK Signature Scheme v3 only (Android 9 and newer; Cam2You needs 10),
+            # so that phones with the old key's Cam2You take it.
+            key=$("$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+            newest=$("$apksigner" lineage --in "$lineage" --print-certs | sed -n 's/^Signer #[0-9]* in lineage certificate SHA-256 digest: //p' | tail -1)
+            if [ "$key" != "$newest" ]; then
+              echo "::error::ANDROID_SIGNING is not the newest key of the signing lineage"; exit 1
+            fi
+            "$apksigner" sign --ks "$ANDROID_KEYSTORE" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --lineage "$lineage" --rotation-min-sdk-version 28 --v1-signing-enabled false --v2-signing-enabled false \
+              "../dist/Cam2You-$VERSION.apk"
+            "$apksigner" lineage --in "../dist/Cam2You-$VERSION.apk" --print-certs | grep 'certificate DN'
+          fi
           "$apksigner" verify --print-certs "../dist/Cam2You-$VERSION.apk" | grep -E 'certificate (DN|SHA-256)'
           ls -l ../dist
 
@@ -443,6 +473,20 @@ jobs:
           cp "$aab" "../play/Cam2You-$VERSION.aab"
           echo "::notice title=Google Play bundle::Cam2You-$VERSION.aab $(stat -c %s "../play/Cam2You-$VERSION.aab") bytes"
 
+      # The APK of the release before this one: the emulator test installs this
+      # one over it, as phones update.
+      - name: Previous release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p previous
+          tag=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 50 --json tagName \
+            --jq '[.[] | select(.tagName | startswith("cam2you-v"))][0].tagName // empty')
+          if [ -n "$tag" ]; then
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern 'Cam2You-*.apk' --dir previous || true
+          fi
+          ls -l previous
+
       # The emulator needs KVM, which the runner has but doesn't open to it.
       - name: KVM
         run: |
@@ -452,7 +496,16 @@ jobs:
           cat > smoke.sh <<'SH'
           set -euo pipefail
           mkdir -p test
-          adb install -r "dist/Cam2You-$VERSION.apk"
+          # Over the release before it: Android takes an update only from the same
+          # key, or from one that key handed over to (see the top of this file).
+          previous=$(ls previous/Cam2You-*.apk 2> /dev/null | head -1 || true)
+          if [ -n "$previous" ]; then
+            adb install "$previous"
+            adb install -r "dist/Cam2You-$VERSION.apk" || { echo "::error::Cam2You-$VERSION.apk does not install over $(basename "$previous")"; exit 1; }
+            echo "Cam2You-$VERSION.apk installs over $(basename "$previous")"
+          else
+            adb install -r "dist/Cam2You-$VERSION.apk"
+          fi
           adb logcat -c
           adb shell monkey -p com.tiegames.cam2you -c android.intent.category.LAUNCHER 1 > /dev/null
           sleep 40
