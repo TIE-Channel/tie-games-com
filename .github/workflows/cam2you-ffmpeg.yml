@@ -48,12 +48,13 @@ jobs:
           sudo apt-get install -y -q mingw-w64 nasm meson ninja-build cmake pkg-config xxd zip
       - name: FFmpeg
         id: build
+        # (Not REVISION: FFmpeg's Makefile would take it for its version.)
         env:
-          REVISION: ${{ inputs.revision }}
+          BUILD_REVISION: ${{ inputs.revision }}
         run: |
-          [[ "$REVISION" =~ ^[0-9]+$ ]] || { echo "::error::Revision is a number"; exit 1; }
+          [[ "$BUILD_REVISION" =~ ^[0-9]+$ ]] || { echo "::error::Revision is a number"; exit 1; }
           tag=$(sed -n 's/^tag=//p' cam2you/tool/ffmpeg_source.sh)
-          name="ffmpeg-$tag-cam2you.$REVISION-win64-lgpl-shared"
+          name="ffmpeg-$tag-cam2you.$BUILD_REVISION-win64-lgpl-shared"
           WORK="$RUNNER_TEMP/ffmpeg" bash cam2you/tool/build_ffmpeg_windows.sh "out/$name"
           (cd out && zip -q -r -X "../$name.zip" "$name")
           sha256sum "$name.zip" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -112,6 +113,7 @@ jobs:
           & $ffmpeg -hide_banner -v error -f lavfi -i testsrc2=s=1280x720:r=30 -frames:v 5 -vf format=nv12 `
             -c:v h264_mf -hw_encoding 1 -rate_control quality -quality 95 -bf 0 -f null - 2>&1 | Out-String
           "Media Foundation's H.264 encoder on this runner: $(if ($LASTEXITCODE) { 'no' } else { 'yes' })"
+          exit 0
 
   publish:
     needs: [build, try]
