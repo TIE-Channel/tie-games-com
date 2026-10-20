@@ -1,0 +1,139 @@
+# Builds the LGPL FFmpeg that Cam2You for Windows bundles (cam2you's
+# tool/build_ffmpeg_windows.sh, its SPEC §13.4: FFmpeg's own decoders,
+# encoders, filters and formats, the graphics cards' encoders, OpenH264, dav1d
+# and libvmaf) on Linux, tries it on Windows, and with Publish keeps it in a
+# release of this repository, ffmpeg-<FFmpeg's tag>-cam2you.<revision> (not a
+# Cam2You release): cam2you's tool/fetch_ffmpeg.dart downloads it from there,
+# pinned by its SHA-256, for the release builds and for building Cam2You on a
+# PC. A release here is never changed: a new build takes a new revision.
+#
+# Run it by hand: Actions → Cam2You FFmpeg → Run workflow.
+name: Cam2You FFmpeg
+
+on:
+  workflow_dispatch:
+    inputs:
+      cam2you_ref:
+        description: Cam2You branch, tag or commit
+        default: main
+      revision:
+        description: The build's number for this FFmpeg version
+        default: '1'
+      publish:
+        description: Make the release (else only build and try)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    outputs:
+      name: ${{ steps.build.outputs.name }}
+      commit: ${{ steps.build.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/cam2you
+          ref: ${{ inputs.cam2you_ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: cam2you
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q mingw-w64 nasm meson ninja-build cmake pkg-config xxd zip
+      - name: FFmpeg
+        id: build
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          [[ "$REVISION" =~ ^[0-9]+$ ]] || { echo "::error::Revision is a number"; exit 1; }
+          tag=$(sed -n 's/^tag=//p' cam2you/tool/ffmpeg_source.sh)
+          name="ffmpeg-$tag-cam2you.$REVISION-win64-lgpl-shared"
+          WORK="$RUNNER_TEMP/ffmpeg" bash cam2you/tool/build_ffmpeg_windows.sh "out/$name"
+          (cd out && zip -q -r -X "../$name.zip" "$name")
+          sha256sum "$name.zip" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git -C cam2you rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-windows
+          path: ffmpeg-*.zip
+          if-no-files-found: error
+
+  # What Cam2You asks of it, on Windows: the programs start, the encoders are
+  # there, the self-check's clips are made (OpenH264 and AAC in MP4), a clip
+  # is read over HTTP as Cam2You serves sources without a path (loopback.dart)
+  # and measured with libvmaf as the engine does (vmaf.rs). The runner has no
+  # graphics card: Media Foundation's encoder is only tried.
+  try:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-windows
+      - name: Try it
+        env:
+          NAME: ${{ needs.build.outputs.name }}
+        run: |
+          Expand-Archive "$env:NAME.zip" -DestinationPath .
+          $ffmpeg = "$env:NAME\bin\ffmpeg.exe"
+          $ffprobe = "$env:NAME\bin\ffprobe.exe"
+          & $ffmpeg -hide_banner -version
+          if ($LASTEXITCODE) { throw 'ffmpeg.exe does not start' }
+          & $ffprobe -hide_banner -version | Select-Object -First 1
+          if ($LASTEXITCODE) { throw 'ffprobe.exe does not start' }
+          $encoders = & $ffmpeg -hide_banner -encoders | Out-String
+          foreach ($e in 'h264_nvenc', 'hevc_nvenc', 'h264_amf', 'hevc_amf', 'h264_qsv', 'hevc_qsv', 'h264_mf', 'hevc_mf', 'libopenh264', 'aac', 'prores_ks', 'mjpeg') {
+            if ($encoders -notmatch " $e ") { throw "No encoder $e" }
+          }
+          $decoders = & $ffmpeg -hide_banner -decoders | Out-String
+          if ($decoders -notmatch ' libdav1d ') { throw 'No dav1d' }
+          & $ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=1280x720:rate=30:duration=3" `
+            -f lavfi -i "sine=frequency=440:duration=3" -c:v libopenh264 -b:v 2M -c:a aac -shortest clip.mp4
+          if ($LASTEXITCODE) { throw 'No clip' }
+          $server = Start-Process python -ArgumentList '-m', 'http.server', '8765', '--bind', '127.0.0.1' -PassThru -WindowStyle Hidden
+          Start-Sleep 3
+          $streams = & $ffprobe -hide_banner -v error -show_entries stream=codec_name -of csv=p=0 http://127.0.0.1:8765/clip.mp4
+          $read = $LASTEXITCODE
+          Stop-Process -Id $server.Id -Force
+          "Over HTTP: $streams"
+          if ($read -or "$streams" -notmatch 'h264.*aac') { throw 'The clip is not read over HTTP' }
+          & $ffmpeg -hide_banner -loglevel error -i clip.mp4 -i clip.mp4 `
+            -lavfi "[0:v][1:v]libvmaf=log_fmt=json:log_path=vmaf.json:n_threads=2" -f null -
+          if ($LASTEXITCODE) { throw 'No VMAF' }
+          "VMAF of the clip against itself: $((Get-Content vmaf.json -Raw | ConvertFrom-Json).pooled_metrics.vmaf.mean)"
+          & $ffmpeg -hide_banner -v error -f lavfi -i testsrc2=s=1280x720:r=30 -frames:v 5 -vf format=nv12 `
+            -c:v h264_mf -hw_encoding 1 -rate_control quality -quality 95 -bf 0 -f null - 2>&1 | Out-String
+          "Media Foundation's H.264 encoder on this runner: $(if ($LASTEXITCODE) { 'no' } else { 'yes' })"
+
+  publish:
+    needs: [build, try]
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-windows
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ needs.build.outputs.name }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          tag="${NAME%-win64-lgpl-shared}"
+          if gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::$tag is there already: a new build takes a new revision"
+            exit 1
+          fi
+          sum=$(sha256sum "$NAME.zip" | cut -d' ' -f1)
+          gh release create "$tag" "$NAME.zip" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+            --title "$tag" --notes "The LGPL FFmpeg that Cam2You for Windows bundles, built by cam2you's tool/build_ffmpeg_windows.sh (cam2you $COMMIT). Not a Cam2You release. SHA-256 of $NAME.zip: $sum"
