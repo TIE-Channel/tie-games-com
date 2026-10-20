@@ -114,7 +114,7 @@ jobs:
           fi
           unset BUILD_CONFIG_JSON
           source engine/scripts/env-cam2you-linux.sh
-          flutter build linux --release ${define[@]+"${define[@]}"}
+          flutter build linux --release --split-debug-info=build/symbols --obfuscate ${define[@]+"${define[@]}"}
           engine=build/linux/x64/release/bundle/lib/libcam2you_engine.so
           if [ ! -f "$engine" ]; then echo "::error::No engine in the build: $engine"; exit 1; fi
           echo "The engine: $(stat -c %s "$engine") bytes"
@@ -210,6 +210,13 @@ jobs:
         with:
           name: notes-linux
           path: notes/3-linux.md
+      # Dart's debug info, split off the obfuscated build: it turns a stack trace
+      # from this version back into names (flutter symbolize).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-linux
+          path: cam2you/build/symbols
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux

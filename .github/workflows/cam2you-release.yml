@@ -18,8 +18,12 @@
 # is made the Windows installer is tried on its runner (installed, started
 # with its self-check — the engine loads and auto-edits two clips — and
 # removed again) and Cam2You's APK on an Android emulator (installed and
-# started; the emulator is x86-64, so the 64-bit ARM engine is only checked
-# to be in the APK). Everything must succeed.
+# started; the emulator is x86-64 and runs the 64-bit ARM app through its ARM
+# translation). Everything must succeed.
+#
+# Every release build is obfuscated with its Dart debug info split off (about
+# 2 MB less per platform); the debug info is kept as the artifact
+# symbols-<platform>, to read stack traces of that version.
 #
 # Linux, macOS and iOS are built by workflows of their own (build-linux.yml,
 # build-macos.yml, build-ios.yml), called from here. Each uploads its files as
@@ -221,7 +225,7 @@ jobs:
           flutter pub get
           dart run tool/fetch_ffmpeg.dart
           . ./engine/scripts/env-windows.ps1
-          flutter build windows --release $define
+          flutter build windows --release --split-debug-info=build\symbols --obfuscate $define
           $engine = 'build\windows\x64\runner\Release\cam2you_engine.dll'
           if (-not (Test-Path $engine)) { throw "No engine in the build: $engine" }
           "The engine: $((Get-Item $engine).Length) bytes"
@@ -317,17 +321,25 @@ jobs:
           path: ${{ runner.temp }}/*.log
           if-no-files-found: ignore
 
+      # Dart's debug info, split off the obfuscated build: it turns a stack trace
+      # from this version back into names (flutter symbolize).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-windows
+          path: C:\C\build\symbols
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: dist-windows
           path: C:\C\build\installer\*.exe
           if-no-files-found: error
 
-  # Cam2You for Android phones: one APK for 64-bit ARM phones and x86-64
-  # (Chromebooks, the emulator), signed with the TIE-Games key, then installed
-  # and started on an Android 14 emulator. The engine (Auto-edit) is built for
-  # 64-bit ARM only, against FFmpeg for Android built first (kept in the
-  # cache while its script is the same); x86-64 runs without it.
+  # Cam2You for Android phones: one APK for 64-bit ARM phones (x86-64
+  # Chromebooks and the emulator run it through their ARM translation), signed
+  # with the TIE-Games key, then installed and started on an Android 14
+  # emulator. The engine (Auto-edit) is built for 64-bit ARM only, against
+  # FFmpeg for Android built first (kept in the cache while its script is the
+  # same). Play's bundle has x86-64 too, without the engine.
   android:
     needs: prepare
     if: contains(inputs.platforms, 'android')
@@ -421,8 +433,13 @@ jobs:
           fi
           flutter pub get
           source engine/scripts/env-cam2you-android.sh
-          flutter build apk --release --target-platform android-arm64,android-x64 "${define[@]}"
+          flutter build apk --release --target-platform android-arm64 \
+            --split-debug-info=build/symbols/apk --obfuscate "${define[@]}"
           apk=build/app/outputs/flutter-apk/app-release.apk
+          # 64-bit ARM only: a plugin's libraries for another ABI would be picked on such a device and crash.
+          if unzip -l "$apk" | grep -qE ' lib/(x86_64|x86|armeabi-v7a)/'; then
+            echo "::error::The APK has libraries for another ABI than arm64-v8a"; unzip -l "$apk" | grep ' lib/'; exit 1
+          fi
           # Flutter makes an APK without the engine when its build fails: it must be there.
           for lib in libcam2you_engine.so libavcodec.so libc++_shared.so; do
             unzip -l "$apk" | grep -q "lib/arm64-v8a/$lib" || { echo "::error::No $lib in the APK"; exit 1; }
@@ -464,8 +481,12 @@ jobs:
           if [ -f build_config.json ]; then define=(--dart-define-from-file=build_config.json); fi
           source engine/scripts/env-cam2you-android.sh
           flutter build appbundle --release --target-platform android-arm64,android-x64 \
+            --split-debug-info=build/symbols/play --obfuscate \
             -Pcam2you.play=true --dart-define=CAM2YOU_STORE=play "${define[@]}"
           aab=build/app/outputs/bundle/release/app-release.aab
+          if unzip -l "$aab" | grep -qE 'base/lib/(x86|armeabi-v7a)/'; then
+            echo "::error::The bundle has 32-bit libraries: Play would offer it to phones it can't start on"; exit 1
+          fi
           unzip -l "$aab" | grep -q 'base/lib/arm64-v8a/libcam2you_engine.so' || { echo "::error::No engine in the bundle"; exit 1; }
           if unzip -p "$aab" base/manifest/AndroidManifest.xml | grep -aq REQUEST_INSTALL_PACKAGES; then
             echo "::error::The bundle asks to install packages"; exit 1
@@ -507,6 +528,8 @@ jobs:
           else
             adb install -r "dist/Cam2You-$VERSION.apk"
           fi
+          # The APK is 64-bit ARM: the x86-64 emulator runs it through its ARM translation.
+          echo "ARM translation: $(adb shell getprop ro.dalvik.vm.native.bridge)"
           adb logcat -c
           adb shell monkey -p com.tiegames.cam2you -c android.intent.category.LAUNCHER 1 > /dev/null
           sleep 40
@@ -536,6 +559,13 @@ jobs:
           name: android-test
           path: test/
           if-no-files-found: ignore
+      # Dart's debug info, split off the obfuscated build: it turns a stack trace
+      # from this version back into names (flutter symbolize).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-android
+          path: cam2you/build/symbols
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: dist-android

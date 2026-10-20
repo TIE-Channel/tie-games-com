@@ -122,7 +122,7 @@ jobs:
           unset BUILD_CONFIG_JSON
           flutter pub get
           source engine/scripts/env-cam2you-macos.sh
-          flutter build macos --release ${define[@]+"${define[@]}"}
+          flutter build macos --release --split-debug-info=build/symbols --obfuscate ${define[@]+"${define[@]}"}
           engine=build/macos/Build/Products/Release/Cam2You.app/Contents/Frameworks/cam2you_engine.framework
           if [ ! -d "$engine" ]; then echo "::error::No engine in the build: $engine"; exit 1; fi
           lipo -archs "$engine/cam2you_engine"
@@ -247,6 +247,13 @@ jobs:
         with:
           name: notes-macos
           path: notes/4-macos.md
+      # Dart's debug info, split off the obfuscated build: it turns a stack trace
+      # from this version back into names (flutter symbolize).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-macos
+          path: cam2you/build/symbols
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: dist-macos

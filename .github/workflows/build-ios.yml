@@ -186,7 +186,7 @@ jobs:
         working-directory: cam2you
         run: |
           source engine/scripts/env-cam2you-ios.sh iphoneos
-          flutter build ios --release --no-codesign ${DEFINE:-}
+          flutter build ios --release --no-codesign --split-debug-info=build/symbols --obfuscate ${DEFINE:-}
           app=build/ios/iphoneos/Cam2You.app
           for framework in cam2you_engine libavcodec libavformat libavfilter libavutil libswscale libswresample; do
             if [ ! -d "$app/Frameworks/$framework.framework" ]; then echo "::error::No $framework.framework in the app"; exit 1; fi
@@ -211,6 +211,13 @@ jobs:
         with:
           name: notes-ios
           path: notes/5-ios.md
+      # Dart's debug info, split off the obfuscated build: it turns a stack trace
+      # from this version back into names (flutter symbolize).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-ios
+          path: cam2you/build/symbols
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: dist-ios
