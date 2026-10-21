@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TIE-Games - Indie Pixel Art Studio | Evolrace</title>
-<meta name="description" content="TIE-Games is an indie game studio from Dresden, Germany. Creators of Evolrace - the endless pixel art runner with 19 levels and 10 epic boss battles.">
+<title>TIE-Games - Software and Games from Dresden | Cam2You, Panorun, Evolrace</title>
+<meta name="description" content="TIE-Games is an independent studio in Dresden, Germany, making software and games: the video tool Cam2You, the game emulator Panorun and the runner game Evolrace.">
 <meta name="theme-color" content="#ffffff">
 <meta name="author" content="TIE-Games">
 
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="canonical" href="https://tie-games.com">
 
-<meta property="og:title" content="TIE-Games - Indie Pixel Art Studio">
-<meta property="og:description" content="Indie game studio from Dresden. Creators of Evolrace.">
+<meta property="og:title" content="TIE-Games - Software and Games">
+<meta property="og:description" content="Independent studio from Dresden making software and games: Cam2You, Panorun and Evolrace.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tie-games.com">
 <meta property="og:image" content="https://tie-games.com/og-image.png">
@@ -23,7 +23,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TIE-Games">
-<meta name="twitter:description" content="Indie pixel art games studio.">
+<meta name="twitter:description" content="Software and games from an independent studio in Dresden.">
 <meta name="twitter:image" content="https://tie-games.com/og-image.png">
 
 <style>
@@ -199,7 +199,6 @@
   .hero-logo {
     width: clamp(140px, 22vw, 220px);
     margin-bottom: 32px;
-    animation: logoIn 1s var(--ease) both, logoFloat 6s ease-in-out 1.2s infinite;
   }
   .eyebrow {
     display: inline-block;
@@ -459,22 +458,6 @@
     align-items: center;
     justify-content: center;
   }
-  /* Software: the app's icon on white instead of a cover picture */
-  .game-cover-wrap.app-cover {
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .app-icon {
-    width: 46%;
-    height: auto;
-    transition: transform 0.6s var(--ease);
-  }
-  .app-icon.pixel-art { image-rendering: pixelated; }
-  .game-card:hover .app-icon {
-    transform: scale(1.05);
-  }
   .app-link {
     display: inline-flex;
     align-items: center;
@@ -683,7 +666,7 @@
     max-width: var(--container);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 48px;
     margin-bottom: 40px;
   }
@@ -775,15 +758,6 @@
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes logoIn {
-    0% { opacity: 0; transform: scale(0.85); }
-    60% { opacity: 1; transform: scale(1.04); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes logoFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
   @keyframes bounce {
     0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
     50% { transform: translateX(-50%) translateY(6px); opacity: 1; }
@@ -809,8 +783,7 @@
       <span class="brand-text">TIE<span class="accent">-</span>GAMES</span>
     </a>
     <nav class="nav" aria-label="Main">
-      <a href="#games" class="nav-link">Games</a>
-      <a href="#software" class="nav-link">Software</a>
+      <a href="#work" class="nav-link">Our Work</a>
       <a href="#about" class="nav-link">About</a>
       <a href="#contact" class="nav-link">Contact</a>
     </nav>
@@ -821,38 +794,74 @@
 
 <section class="hero" aria-labelledby="hero-title">
   <img src="tie-logo.jpg" alt="TIE-Games logo" class="hero-logo">
-  <span class="eyebrow">Independent Game Studio</span>
-  <h1 id="hero-title">Pixel art games<br>for <span class="red">arcade lovers</span></h1>
-  <p class="hero-lede">We craft retro-inspired games where simple controls hide deep gameplay. Every pixel placed with intent. Every level designed to challenge and delight.</p>
+  <span class="eyebrow">Independent Studio &middot; Dresden</span>
+  <h1 id="hero-title">Tools that <span class="red">work</span>.<br>Games to <span class="red">play</span>.</h1>
+  <p class="hero-lede">We are a small studio making apps and games with the same idea behind them: clear, quick and honest. Pick them up in a second, keep them for years - no ads, no tracking, no accounts you don't need.</p>
   <div class="hero-actions">
-    <a href="#games" class="btn btn-primary">View our games</a>
+    <a href="#work" class="btn btn-primary">See our work</a>
     <a href="#about" class="btn btn-secondary">Our story</a>
   </div>
   <div class="hero-scroll" aria-hidden="true">Scroll &darr;</div>
 </section>
 
-<section class="section" id="games" aria-labelledby="games-title">
+<section class="section" id="work" aria-labelledby="work-title">
   <div class="container">
     <div class="section-header">
-      <span class="section-eyebrow">Releases</span>
-      <h2 id="games-title" class="section-title">Now <span class="red">Playing</span></h2>
-      <p class="section-lede">Each title is a focused experience. No microtransactions hidden behind paywalls. No demands on your data. Just gameplay worth coming back to.</p>
+      <span class="section-eyebrow">Our Work</span>
+      <h2 id="work-title" class="section-title">Software &amp; <span class="red">Games</span></h2>
+      <p class="section-lede">Everything we make is focused and finished: one thing, done well. No microtransactions hidden behind paywalls, no data harvesting, no busywork - just a tool that does its job and gets out of your way, or a game worth coming back to.</p>
     </div>
 
     <div class="games-grid">
-      
+
       <article class="game-card">
         <div class="game-cover-wrap">
-          <span class="game-status live">Out Now</span>
+          <span class="game-status live">App</span>
+          <img src="cam2you-cover.jpg" alt="" class="game-cover" loading="lazy">
+        </div>
+        <div class="game-content">
+          <h3 class="game-name">Cam2You</h3>
+          <p class="game-blurb">From your action camera to your YouTube channel, without the busywork: it finds your videos, lets you cut and join them, edits them into one film if you like, and uploads them.</p>
+          <div class="game-tags">
+            <span class="tag">Windows</span>
+            <span class="tag">Mac</span>
+            <span class="tag">Linux</span>
+            <span class="tag">Android</span>
+          </div>
+          <a href="/cam2you/" class="app-link">Get Cam2You &rarr;</a>
+        </div>
+      </article>
+
+      <article class="game-card">
+        <div class="game-cover-wrap">
+          <span class="game-status live">New</span>
+          <img src="panorun-cover.jpg" alt="" class="game-cover" loading="lazy">
+        </div>
+        <div class="game-content">
+          <h3 class="game-name">Panorun</h3>
+          <p class="game-blurb">A game emulator that keeps the whole level in view as you play - and puts your friends inside your game, running beside you, online.</p>
+          <div class="game-tags">
+            <span class="tag">Windows</span>
+            <span class="tag">Emulator</span>
+            <span class="tag">Online Play</span>
+            <span class="tag">Free</span>
+          </div>
+          <a href="/panorun/" class="app-link">Get Panorun &rarr;</a>
+        </div>
+      </article>
+
+      <article class="game-card">
+        <div class="game-cover-wrap">
+          <span class="game-status live">Game</span>
           <img src="evolrace-banner.jpg" alt="" class="game-cover" loading="lazy">
         </div>
         <div class="game-content">
           <h3 class="game-name">Evolrace</h3>
-          <p class="game-blurb">Endless pixel runner with 19 hand-crafted levels and 10 unique boss battles. Evolve your hero from a tiny lizard into a futuristic cyborg.</p>
+          <p class="game-blurb">Endless runner with 19 hand-crafted levels and 10 unique boss battles. Evolve your hero from a tiny lizard into a futuristic cyborg.</p>
           <div class="game-tags">
-            <span class="tag">Arcade</span>
+            <span class="tag">Game</span>
             <span class="tag">Endless Runner</span>
-            <span class="tag">Pixel Art</span>
+            <span class="tag">Android</span>
             <span class="tag">Free</span>
           </div>
           <a href="https://play.google.com/store/apps/details?id=com.tiegames.evolrace" class="play-badge" aria-label="Get Evolrace on Google Play">
@@ -867,95 +876,31 @@
         </div>
       </article>
 
-      <article class="game-card coming">
-        <div class="game-cover-wrap">
-          <span class="game-status">Coming Soon</span>
-          <span class="game-placeholder" aria-hidden="true">?</span>
-        </div>
-        <div class="game-content">
-          <h3 class="game-name">Untitled Project</h3>
-          <p class="game-blurb">A new arcade adventure is in development at our studio. Stay tuned for more details on our next pixel-art journey.</p>
-          <div class="game-tags">
-            <span class="tag">In Development</span>
-            <span class="tag">2026</span>
-          </div>
-        </div>
-      </article>
-
     </div>
   </div>
 </section>
 
-<section class="section section-alt" id="software" aria-labelledby="software-title">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-eyebrow">Software</span>
-      <h2 id="software-title" class="section-title">Our <span class="red">Tools</span></h2>
-      <p class="section-lede">Apps we make for ourselves and share with you. No accounts, no tracking, nothing between you and what you made.</p>
-    </div>
-
-    <div class="games-grid">
-
-      <article class="game-card">
-        <div class="game-cover-wrap app-cover">
-          <span class="game-status live">Out Now</span>
-          <img src="cam2you/icon-264.png" alt="" class="app-icon" loading="lazy">
-        </div>
-        <div class="game-content">
-          <h3 class="game-name">Cam2You</h3>
-          <p class="game-blurb">Gets the videos off your GoPro, lets you cut and join them, and uploads them to your YouTube channel - as one video or as a playlist.</p>
-          <div class="game-tags">
-            <span class="tag">Windows</span>
-            <span class="tag">Mac</span>
-            <span class="tag">Linux</span>
-            <span class="tag">Android</span>
-          </div>
-          <a href="/cam2you/" class="app-link">Get Cam2You &rarr;</a>
-        </div>
-      </article>
-
-      <article class="game-card">
-        <div class="game-cover-wrap app-cover">
-          <span class="game-status live">New</span>
-          <img src="panorun/icon-264.png" alt="" class="app-icon pixel-art" loading="lazy">
-        </div>
-        <div class="game-content">
-          <h3 class="game-name">Panorun</h3>
-          <p class="game-blurb">An emulator for classic 8-bit console games that keeps the whole level in view, and lets you play together online with your friends running beside you.</p>
-          <div class="game-tags">
-            <span class="tag">Windows</span>
-            <span class="tag">Emulator</span>
-            <span class="tag">Online Play</span>
-          </div>
-          <a href="/panorun/" class="app-link">Get Panorun &rarr;</a>
-        </div>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-<section class="section" id="about" aria-labelledby="about-title">
+<section class="section section-alt" id="about" aria-labelledby="about-title">
   <div class="container">
     <div class="about-layout">
       <div class="about-text">
         <span class="section-eyebrow">Our Story</span>
-        <h2 id="about-title" class="section-title">Born from love<br>of <span class="red">arcades</span></h2>
-        <p>TIE-Games is an independent studio based in <strong>Dresden, Germany</strong>. We grew up with classic arcade games - the kind that taught you through play, where one more try always felt within reach.</p>
-        <p>Our games respect the player. No tutorials that won't end. No notifications begging you to come back. No data harvesting under the guise of personalization.</p>
+        <h2 id="about-title" class="section-title">Everyday tools<br>and <span class="red">video games</span></h2>
+        <p>TIE-Games is an independent studio based in <strong>Dresden, Germany</strong>, making software and games. Our apps take a chore off your hands and get out of your way - from turning camera footage into finished videos to playing your favourite games in a new way, together. Our video games teach you through play, and one more try always feels within reach.</p>
+        <p>Whatever we make respects the people using it. No tutorials that won't end, no notifications begging you to come back, no accounts you don't need and no data harvesting under the guise of personalization. Your files and your time stay yours.</p>
 
         <div class="principles">
           <div class="principle">
             <div class="principle-num">01</div>
-            <div class="principle-text"><strong>Respect the player's time</strong>Sessions that fit between life's moments.</div>
+            <div class="principle-text"><strong>Respect people's time</strong>Tools that finish the job, games that fit between life's moments.</div>
           </div>
           <div class="principle">
             <div class="principle-num">02</div>
-            <div class="principle-text"><strong>Simple to learn, hard to master</strong>One-tap controls. Endless depth.</div>
+            <div class="principle-text"><strong>Simple to start, deep to master</strong>One tap to begin, plenty of room to grow.</div>
           </div>
           <div class="principle">
             <div class="principle-num">03</div>
-            <div class="principle-text"><strong>Every pixel matters</strong>Hand-crafted art. No shortcuts.</div>
+            <div class="principle-text"><strong>Every detail matters</strong>Carefully built software and hand-crafted games. No shortcuts.</div>
           </div>
         </div>
       </div>
@@ -971,7 +916,7 @@
     <div class="contact-block">
       <span class="section-eyebrow" style="justify-content: center;">Get in Touch</span>
       <h2 id="contact-title" class="section-title">Let's <span class="red">talk</span></h2>
-      <p class="section-lede" style="margin: 16px auto 0;">Press inquiries, partnerships, or just want to chat about games? We'd love to hear from you.</p>
+      <p class="section-lede" style="margin: 16px auto 0;">Press, partnerships, support or an idea for one of our apps or games? We'd love to hear from you.</p>
 
       <div class="contact-channels">
         <a href="mailto:tie.games.info@gmail.com" class="channel">
@@ -996,20 +941,14 @@
         <img src="tie-logo.jpg" alt="" class="footer-brand-mark">
         <span class="brand-text">TIE<span class="accent">-</span>GAMES</span>
       </div>
-      <p class="footer-tagline">Independent pixel art game studio based in Dresden, Germany. Crafting arcade games since 2026.</p>
+      <p class="footer-tagline">Independent studio based in Dresden, Germany, making software and games since 2026.</p>
     </div>
     <div>
-      <h3 class="footer-col-title">Games</h3>
-      <ul class="footer-list">
-        <li><a href="https://play.google.com/store/apps/details?id=com.tiegames.evolrace">Evolrace</a></li>
-        <li><a href="#games">Coming Soon</a></li>
-      </ul>
-    </div>
-    <div>
-      <h3 class="footer-col-title">Software</h3>
+      <h3 class="footer-col-title">Our Work</h3>
       <ul class="footer-list">
         <li><a href="/cam2you/">Cam2You</a></li>
         <li><a href="/panorun/">Panorun</a></li>
+        <li><a href="https://play.google.com/store/apps/details?id=com.tiegames.evolrace">Evolrace</a></li>
       </ul>
     </div>
     <div>
