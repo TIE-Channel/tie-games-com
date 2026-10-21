@@ -459,6 +459,42 @@
     align-items: center;
     justify-content: center;
   }
+  /* Software: the app's icon on white instead of a cover picture */
+  .game-cover-wrap.app-cover {
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app-icon {
+    width: 46%;
+    height: auto;
+    transition: transform 0.6s var(--ease);
+  }
+  .app-icon.pixel-art { image-rendering: pixelated; }
+  .game-card:hover .app-icon {
+    transform: scale(1.05);
+  }
+  .app-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--ink);
+    color: var(--bg);
+    border: 2px solid var(--ink);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .app-link:hover {
+    background: var(--red);
+    border-color: var(--red);
+  }
+
   .game-placeholder {
     font-family: var(--font-display);
     font-size: 96px;
@@ -647,7 +683,7 @@
     max-width: var(--container);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 48px;
     margin-bottom: 40px;
   }
@@ -774,6 +810,7 @@
     </a>
     <nav class="nav" aria-label="Main">
       <a href="#games" class="nav-link">Games</a>
+      <a href="#software" class="nav-link">Software</a>
       <a href="#about" class="nav-link">About</a>
       <a href="#contact" class="nav-link">Contact</a>
     </nav>
@@ -849,7 +886,56 @@
   </div>
 </section>
 
-<section class="section section-alt" id="about" aria-labelledby="about-title">
+<section class="section section-alt" id="software" aria-labelledby="software-title">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Software</span>
+      <h2 id="software-title" class="section-title">Our <span class="red">Tools</span></h2>
+      <p class="section-lede">Apps we make for ourselves and share with you. No accounts, no tracking, nothing between you and what you made.</p>
+    </div>
+
+    <div class="games-grid">
+
+      <article class="game-card">
+        <div class="game-cover-wrap app-cover">
+          <span class="game-status live">Out Now</span>
+          <img src="cam2you/icon-264.png" alt="" class="app-icon" loading="lazy">
+        </div>
+        <div class="game-content">
+          <h3 class="game-name">Cam2You</h3>
+          <p class="game-blurb">Gets the videos off your GoPro, lets you cut and join them, and uploads them to your YouTube channel - as one video or as a playlist.</p>
+          <div class="game-tags">
+            <span class="tag">Windows</span>
+            <span class="tag">Mac</span>
+            <span class="tag">Linux</span>
+            <span class="tag">Android</span>
+          </div>
+          <a href="/cam2you/" class="app-link">Get Cam2You &rarr;</a>
+        </div>
+      </article>
+
+      <article class="game-card">
+        <div class="game-cover-wrap app-cover">
+          <span class="game-status live">New</span>
+          <img src="nespan/icon-264.png" alt="" class="app-icon pixel-art" loading="lazy">
+        </div>
+        <div class="game-content">
+          <h3 class="game-name">Nespan</h3>
+          <p class="game-blurb">An emulator for 8-bit NES games that keeps the whole level in view, and lets you play together online with your friends running beside you.</p>
+          <div class="game-tags">
+            <span class="tag">Windows</span>
+            <span class="tag">Emulator</span>
+            <span class="tag">Online Play</span>
+          </div>
+          <a href="/nespan/" class="app-link">Get Nespan &rarr;</a>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="section" id="about" aria-labelledby="about-title">
   <div class="container">
     <div class="about-layout">
       <div class="about-text">
@@ -916,8 +1002,14 @@
       <h3 class="footer-col-title">Games</h3>
       <ul class="footer-list">
         <li><a href="https://play.google.com/store/apps/details?id=com.tiegames.evolrace">Evolrace</a></li>
-        <li><a href="/cam2you/">Cam2You</a></li>
         <li><a href="#games">Coming Soon</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="footer-col-title">Software</h3>
+      <ul class="footer-list">
+        <li><a href="/cam2you/">Cam2You</a></li>
+        <li><a href="/nespan/">Nespan</a></li>
       </ul>
     </div>
     <div>

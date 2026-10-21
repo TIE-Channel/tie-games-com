@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""update.json for Cam2You's desktop apps, signed (cam2you's SPEC §13.1).
+"""update.json for Cam2You's desktop apps, signed (cam2you's SPEC §13.1),
+and for Nespan's (the emulator's SPEC section 9).
 
 The release job of cam2you-release.yml runs it on the release's files before
-they are uploaded:
+they are uploaded, and nespan-release.yml's with --app Nespan:
 
     update-manifest.py dist --tag cam2you-v0.1.4 --version 0.1.4
+    update-manifest.py dist --app Nespan --tag nespan-v0.1.0 --version 0.1.0
 
 It lists every desktop file in the folder (Windows' installers, Linux's
 AppImages, macOS's disk images) and writes the folder's update.json:
@@ -12,8 +14,8 @@ AppImages, macOS's disk images) and writes the folder's update.json:
     {
       "schema": 1,
       "tag": "cam2you-v0.1.4",
-      "version": "0.1.4",           Cam2You's version
-      "min_version": "0.0.0",       the oldest Cam2You that may update itself to it
+      "version": "0.1.4",           the app's version
+      "min_version": "0.0.0",       the oldest version that may update itself to it
       "published": "2026-10-05T12:00:00Z",
       "expires": "2027-10-05T12:00:00Z",
       "files": [{"name": "Cam2You-Only-Setup-0.1.4.exe", "app": "Cam2You",
@@ -59,6 +61,7 @@ VERSION = r'(\d+(?:\.\d+)*)'
 # workflows): platform, pattern giving the app and its version.
 DESKTOP_FILES = [
     ('windows', re.compile(rf'^(Cam2You)(?:-Web|-Only)?-Setup-{VERSION}\.exe$')),
+    ('windows', re.compile(rf'^(Nespan)(?:-Web|-Only)?-Setup-{VERSION}\.exe$')),
     ('linux', re.compile(rf'^(Cam2You)-{VERSION}-x86_64\.AppImage$')),
     ('macos', re.compile(rf'^(Cam2You)-{VERSION}\.dmg$')),
 ]
@@ -198,7 +201,7 @@ class Ed25519:
             return result.returncode == 0
 
 
-def sign(path, key_text, use_openssl=False):
+def sign(path, key_text, use_openssl=False, app='Cam2You'):
     """minisign's signature of the file at [path], prehashed (ED)."""
     keynum, seed, public_key = secret_key(key_text)
     signer = Ed25519(seed, use_openssl)
@@ -215,7 +218,7 @@ def sign(path, key_text, use_openssl=False):
         fail('The signature of update.json does not verify')
     key_id = keynum[::-1].hex().upper()
     return key_id, (
-        f'untrusted comment: signature from the Cam2You update key {key_id}\n'
+        f'untrusted comment: signature from the {app} update key {key_id}\n'
         f'{base64.b64encode(b"ED" + keynum + signature).decode()}\n'
         f'trusted comment: {trusted}\n'
         f'{base64.b64encode(global_signature).decode()}\n'
@@ -223,11 +226,12 @@ def sign(path, key_text, use_openssl=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Writes and signs update.json for the desktop files of a Cam2You release.')
+    parser = argparse.ArgumentParser(description='Writes and signs update.json for the desktop files of a Cam2You or Nespan release.')
     parser.add_argument('folder', help="the release's files")
-    parser.add_argument('--tag', required=True, help='the release tag, cam2you-v<version>')
-    parser.add_argument('--version', required=True, help="Cam2You's version")
-    parser.add_argument('--min-version', default='0.0.0', help='the oldest Cam2You that may update itself to this one')
+    parser.add_argument('--app', default='Cam2You', choices=['Cam2You', 'Nespan'], help='whose release it is')
+    parser.add_argument('--tag', required=True, help='the release tag, cam2you-v<version> or nespan-v<version>')
+    parser.add_argument('--version', required=True, help="the app's version")
+    parser.add_argument('--min-version', default='0.0.0', help='the oldest version that may update itself to this one')
     parser.add_argument('--days', type=int, default=365, help='how long the apps accept it')
     parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY') or 'TIE-Channel/tie-games-com')
     parser.add_argument('--now', help='the time it is made (ISO 8601; tests)')
@@ -238,7 +242,9 @@ def main():
     now = (datetime.datetime.fromisoformat(args.now.replace('Z', '+00:00')) if args.now
            else datetime.datetime.now(datetime.timezone.utc)).replace(microsecond=0)
     stamp = lambda t: t.astimezone(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    files = desktop_files(args.folder, args.tag, args.repository, {'Cam2You': args.version})
+    files = desktop_files(args.folder, args.tag, args.repository, {args.app: args.version})
+    if any(entry['app'] != args.app for entry in files):
+        fail(f"{', '.join(e['name'] for e in files if e['app'] != args.app)}: not {args.app}'s, in {args.app}'s release")
     manifest = {
         'schema': 1,
         'tag': args.tag,
@@ -265,7 +271,7 @@ def main():
             fail('No UPDATE_SIGNING_KEY: a published release needs a signed update.json, or the desktop apps would not update from it')
         print(f'::warning::No UPDATE_SIGNING_KEY: {MANIFEST} is not signed, and the apps will not update from it')
         return
-    key_id, text = sign(path, key, args.openssl)
+    key_id, text = sign(path, key, args.openssl, args.app)
     with open(signature, 'w', newline='\n') as f:
         f.write(text)
     print(f'{SIGNATURE}: signed with key {key_id}')
