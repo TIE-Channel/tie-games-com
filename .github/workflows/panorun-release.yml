@@ -1,18 +1,18 @@
-# Builds Nespan, TIE-Games' NES emulator, for Windows and publishes it as a
-# release of this repository, tagged nespan-v<version>: the Download section of
-# tie-games.com/nespan links to the newest one, Nespan's small web installer
-# downloads from it, and Nespan updates itself from it (the emulator's SPEC
-# section 9, nespan/update.py). Like Cam2You's (cam2you-release.yml), it runs
+# Builds Panorun, TIE-Games' emulator for 8-bit console games, for Windows and publishes it as a
+# release of this repository, tagged panorun-v<version>: the Download section of
+# tie-games.com/panorun links to the newest one, Panorun's small web installer
+# downloads from it, and Panorun updates itself from it (the emulator's SPEC
+# section 9, panorun/update.py). Like Cam2You's (cam2you-release.yml), it runs
 # here, in the site's public repository, where Actions minutes are free; the
 # sources stay private: they are only checked out on the runners.
 #
 # The release also gets update.json, every installer with its SHA-256, signed
 # with the key in UPDATE_SIGNING_KEY - the one Cam2You's releases are signed
-# with - as update.json.minisig (.github/scripts/update-manifest.py). Nespan
+# with - as update.json.minisig (.github/scripts/update-manifest.py). Panorun
 # trusts only that key's public half (and Cam2You's other keys).
 #
-# Run it by hand: Actions -> Nespan release -> Run workflow. Before a release
-# is made the tests run, and the installer is tried on its runner: Nespan
+# Run it by hand: Actions -> Panorun release -> Run workflow. Before a release
+# is made the tests run, and the installer is tried on its runner: Panorun
 # installed for the user, started with its self-check (its window opens and a
 # tiny cartridge runs in it), and removed again. Everything must succeed.
 #
@@ -24,14 +24,14 @@
 #                        (permission Contents: Read-only)
 #   UPDATE_SIGNING_KEY   the key update.json is signed with. A published
 #                        release needs it; a draft without it gets an
-#                        unsigned update.json, which Nespan refuses.
-name: Nespan release
+#                        unsigned update.json, which Panorun refuses.
+name: Panorun release
 
 on:
   workflow_dispatch:
     inputs:
-      nespan_ref:
-        description: Nespan (TIE-Channel/emulator) branch, tag or commit
+      panorun_ref:
+        description: Panorun (TIE-Channel/emulator) branch, tag or commit
         default: main
       release:
         description: Publish the release, make a draft (seen only by those who can edit this repository), or none (only build and try)
@@ -48,7 +48,7 @@ permissions:
 
 # Releases one at a time; tries side by side.
 concurrency:
-  group: nespan-release-${{ inputs.release == 'none' && github.run_id || 'release' }}
+  group: panorun-release-${{ inputs.release == 'none' && github.run_id || 'release' }}
 
 jobs:
   # The version, and the commit every job builds, whatever the branches do
@@ -58,7 +58,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
-      nespan: ${{ steps.version.outputs.nespan }}
+      panorun: ${{ steps.version.outputs.panorun }}
     steps:
       - name: Secrets
         env:
@@ -68,23 +68,23 @@ jobs:
           RELEASE: ${{ inputs.release }}
         run: |
           if [ -z "$SOURCE_TOKEN" ]; then
-            echo '::error::No SOURCE_TOKEN secret: see the top of .github/workflows/nespan-release.yml'; exit 1
+            echo '::error::No SOURCE_TOKEN secret: see the top of .github/workflows/panorun-release.yml'; exit 1
           fi
           if [ -z "$UPDATE_SIGNING_KEY" ]; then
             if [ "$PUBLISH" = true ]; then
-              echo '::error::No UPDATE_SIGNING_KEY secret: a published release needs it to sign update.json, or Nespan would not update itself from it'; exit 1
+              echo '::error::No UPDATE_SIGNING_KEY secret: a published release needs it to sign update.json, or Panorun would not update itself from it'; exit 1
             fi
             if [ "$RELEASE" = draft ]; then
-              echo "::warning::No UPDATE_SIGNING_KEY secret: this draft's update.json is not signed, and Nespan will not update from it"
+              echo "::warning::No UPDATE_SIGNING_KEY secret: this draft's update.json is not signed, and Panorun will not update from it"
             fi
           fi
 
       - uses: actions/checkout@v4
         with:
           repository: TIE-Channel/emulator
-          ref: ${{ inputs.nespan_ref }}
+          ref: ${{ inputs.panorun_ref }}
           token: ${{ secrets.SOURCE_TOKEN }}
-          path: nespan
+          path: panorun
           persist-credentials: false
 
       - name: Version
@@ -94,15 +94,15 @@ jobs:
           REPLACE: ${{ inputs.replace }}
           RELEASE: ${{ inputs.release }}
         run: |
-          version=$(grep -oP '^__version__\s*=\s*"\K[\d.]+' nespan/src/nespan/__init__.py)
-          tag="nespan-v$version"
+          version=$(grep -oP '^__version__\s*=\s*"\K[\d.]+' panorun/src/panorun/__init__.py)
+          tag="panorun-v$version"
           {
             echo "version=$version"
             echo "tag=$tag"
-            echo "nespan=$(git -C nespan rev-parse HEAD)"
+            echo "panorun=$(git -C panorun rev-parse HEAD)"
           } >> "$GITHUB_OUTPUT"
           if [ "$RELEASE" != none ] && gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && [ "$REPLACE" != true ]; then
-            echo "::error::Nespan $version is released already: raise __version__ in the emulator's src/nespan/__init__.py, or tick Replace"; exit 1
+            echo "::error::Panorun $version is released already: raise __version__ in the emulator's src/panorun/__init__.py, or tick Replace"; exit 1
           fi
 
   windows:
@@ -116,9 +116,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: TIE-Channel/emulator
-          ref: ${{ needs.prepare.outputs.nespan }}
+          ref: ${{ needs.prepare.outputs.panorun }}
           token: ${{ secrets.SOURCE_TOKEN }}
-          path: nespan
+          path: panorun
           persist-credentials: false
 
       - uses: actions/setup-python@v5
@@ -134,20 +134,20 @@ jobs:
       # The games the tests play are not in the repository: those tests skip.
       # No tracebacks: they would quote the private sources in this public log.
       - name: Tests
-        working-directory: nespan
+        working-directory: panorun
         env:
           SDL_VIDEODRIVER: dummy
           SDL_AUDIODRIVER: dummy
         run: python -m pytest tests -q -p no:cacheprovider --tb=no
 
-      - name: Nespan
-        working-directory: nespan
+      - name: Panorun
+        working-directory: panorun
         run: |
           python build.py --folder
-          if (-not (Test-Path dist\nespan\nespan.exe)) { throw 'No dist\nespan\nespan.exe' }
+          if (-not (Test-Path dist\panorun\panorun.exe)) { throw 'No dist\panorun\panorun.exe' }
 
       - name: Installers
-        working-directory: nespan
+        working-directory: panorun
         run: |
           if (-not (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue)) {
             choco install innosetup --no-progress -y
@@ -157,10 +157,10 @@ jobs:
           $sizes = (Get-ChildItem build/installer/*.exe | ForEach-Object { "$($_.Name) $($_.Length) bytes" }) -join '; '
           "::notice title=Windows installers::$sizes"
 
-      # The full installer as a player runs it, unattended: Nespan installed
+      # The full installer as a player runs it, unattended: Panorun installed
       # for this user, started with its self-check, removed again.
       - name: Install, start, remove
-        working-directory: nespan\build\installer
+        working-directory: panorun\build\installer
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
@@ -169,14 +169,14 @@ jobs:
             return (& $done)
           }
           $log = "$env:RUNNER_TEMP\setup.log"
-          $setup = Start-Process -Wait -PassThru ".\Nespan-Setup-$env:VERSION.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log"
+          $setup = Start-Process -Wait -PassThru ".\Panorun-Setup-$env:VERSION.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log"
           if ($setup.ExitCode -ne 0) { Get-Content $log -Tail 30; throw "The installer failed: $($setup.ExitCode)" }
-          $app = "$env:LOCALAPPDATA\Programs\Nespan"
-          if (-not (Test-Path "$app\nespan.exe")) { throw "No $app\nespan.exe" }
-          if (-not (Test-Path "$([Environment]::GetFolderPath('Desktop'))\Nespan.lnk")) { throw 'No desktop shortcut' }
+          $app = "$env:LOCALAPPDATA\Programs\Panorun"
+          if (-not (Test-Path "$app\panorun.exe")) { throw "No $app\panorun.exe" }
+          if (-not (Test-Path "$([Environment]::GetFolderPath('Desktop'))\Panorun.lnk")) { throw 'No desktop shortcut' }
 
           $answer = "$env:RUNNER_TEMP\self-check.json"
-          $p = Start-Process "$app\nespan.exe" -ArgumentList '--self-check', $answer -PassThru
+          $p = Start-Process "$app\panorun.exe" -ArgumentList '--self-check', $answer -PassThru
           if (-not (WaitFor { Test-Path $answer } 180)) {
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
             throw 'No self-check within 180 s'
@@ -186,7 +186,7 @@ jobs:
           $result
           $json = $result | ConvertFrom-Json
           if (-not $json.ok) { throw "The self-check failed: $($json.error)" }
-          "::notice title=Windows self-check::Nespan $($json.version): $($json.frames) frames at $($json.fps) a second, video $($json.video)"
+          "::notice title=Windows self-check::Panorun $($json.version): $($json.frames) frames at $($json.fps) a second, video $($json.video)"
 
           Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
           if (-not (WaitFor { -not (Test-Path "$app\unins000.exe") } 120)) { throw "$app was not removed" }
@@ -196,14 +196,14 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: setup-logs-nespan
+          name: setup-logs-panorun
           path: ${{ runner.temp }}/*.log
           if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dist-nespan-windows
-          path: nespan/build/installer/Nespan-*.exe
+          name: dist-panorun-windows
+          path: panorun/build/installer/Panorun-*.exe
           if-no-files-found: error
 
   release:
@@ -217,12 +217,12 @@ jobs:
           path: site
       - uses: actions/download-artifact@v4
         with:
-          pattern: dist-nespan-*
+          pattern: dist-panorun-*
           merge-multiple: true
           path: dist
 
       # update.json: every installer of the release with its SHA-256, signed
-      # (update.json.minisig); Nespan updates itself from it.
+      # (update.json.minisig); Panorun updates itself from it.
       - name: Update manifest
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
@@ -232,7 +232,7 @@ jobs:
         run: |
           require=()
           if [ "$PUBLISH" = true ]; then require=(--require-key); fi
-          python3 site/.github/scripts/update-manifest.py dist --app Nespan --tag "$TAG" --version "$VERSION" "${require[@]}"
+          python3 site/.github/scripts/update-manifest.py dist --app Panorun --tag "$TAG" --version "$VERSION" "${require[@]}"
 
       - name: Release
         working-directory: dist
@@ -240,20 +240,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
           TAG: ${{ needs.prepare.outputs.tag }}
-          NESPAN: ${{ needs.prepare.outputs.nespan }}
+          PANORUN: ${{ needs.prepare.outputs.panorun }}
           PUBLISH: ${{ inputs.release == 'publish' }}
           REPLACE: ${{ inputs.replace }}
         run: |
           {
-            echo "Nespan $VERSION."
+            echo "Panorun $VERSION."
             echo
             echo '**Windows** 10 and 11, 64-bit:'
             echo
-            echo "- **Nespan-Setup-$VERSION.exe**: everything in one."
-            echo "- **Nespan-Web-Setup-$VERSION.exe**: the small one - asks the same, then downloads Nespan from this release."
-            echo '- Nespan-Only-Setup: what the small one and the updates download.'
+            echo "- **Panorun-Setup-$VERSION.exe**: everything in one."
+            echo "- **Panorun-Web-Setup-$VERSION.exe**: the small one - asks the same, then downloads Panorun from this release."
+            echo '- Panorun-Only-Setup: what the small one and the updates download.'
             echo
-            echo "Built from emulator ${NESPAN:0:7}."
+            echo "Built from emulator ${PANORUN:0:7}."
             echo
             echo '```'
             sha256sum -- * | sort -k2
@@ -267,4 +267,4 @@ jobs:
           # Not the repository's latest release: that stays Cam2You's, whose
           # page and apps may ask GitHub for it.
           gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "Nespan $VERSION" --notes-file ../notes.md --latest=false "${draft[@]}"
+            --title "Panorun $VERSION" --notes-file ../notes.md --latest=false "${draft[@]}"

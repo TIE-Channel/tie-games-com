@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """update.json for Cam2You's desktop apps, signed (cam2you's SPEC §13.1),
-and for Nespan's (the emulator's SPEC section 9).
+and for Panorun's (the emulator's SPEC section 9).
 
 The release job of cam2you-release.yml runs it on the release's files before
-they are uploaded, and nespan-release.yml's with --app Nespan:
+they are uploaded, and panorun-release.yml's with --app Panorun:
 
     update-manifest.py dist --tag cam2you-v0.1.4 --version 0.1.4
-    update-manifest.py dist --app Nespan --tag nespan-v0.1.0 --version 0.1.0
+    update-manifest.py dist --app Panorun --tag panorun-v0.1.0 --version 0.1.0
 
 It lists every desktop file in the folder (Windows' installers, Linux's
 AppImages, macOS's disk images) and writes the folder's update.json:
@@ -61,7 +61,7 @@ VERSION = r'(\d+(?:\.\d+)*)'
 # workflows): platform, pattern giving the app and its version.
 DESKTOP_FILES = [
     ('windows', re.compile(rf'^(Cam2You)(?:-Web|-Only)?-Setup-{VERSION}\.exe$')),
-    ('windows', re.compile(rf'^(Nespan)(?:-Web|-Only)?-Setup-{VERSION}\.exe$')),
+    ('windows', re.compile(rf'^(Panorun)(?:-Web|-Only)?-Setup-{VERSION}\.exe$')),
     ('linux', re.compile(rf'^(Cam2You)-{VERSION}-x86_64\.AppImage$')),
     ('macos', re.compile(rf'^(Cam2You)-{VERSION}\.dmg$')),
 ]
@@ -226,10 +226,10 @@ def sign(path, key_text, use_openssl=False, app='Cam2You'):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Writes and signs update.json for the desktop files of a Cam2You or Nespan release.')
+    parser = argparse.ArgumentParser(description='Writes and signs update.json for the desktop files of a Cam2You or Panorun release.')
     parser.add_argument('folder', help="the release's files")
-    parser.add_argument('--app', default='Cam2You', choices=['Cam2You', 'Nespan'], help='whose release it is')
-    parser.add_argument('--tag', required=True, help='the release tag, cam2you-v<version> or nespan-v<version>')
+    parser.add_argument('--app', default='Cam2You', choices=['Cam2You', 'Panorun'], help='whose release it is')
+    parser.add_argument('--tag', required=True, help='the release tag, cam2you-v<version> or panorun-v<version>')
     parser.add_argument('--version', required=True, help="the app's version")
     parser.add_argument('--min-version', default='0.0.0', help='the oldest version that may update itself to this one')
     parser.add_argument('--days', type=int, default=365, help='how long the apps accept it')
