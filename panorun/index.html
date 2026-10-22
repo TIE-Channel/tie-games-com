@@ -158,6 +158,21 @@
   .download .next ol { padding-left: 24px; margin-bottom: 10px; }
   .download .next li { margin-bottom: 6px; color: #333; }
   .download ul li { margin-bottom: 6px; }
+  .play-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 2px solid #1a1a1a;
+  }
+  .play-badge:hover { background: #b50026; border-color: #b50026; color: #fff; }
+  .play-badge svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .play-badge-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+  .play-badge-line1 { font-size: 9px; letter-spacing: 0.05em; opacity: 0.85; text-transform: uppercase; }
+  .play-badge-line2 { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+  .download .or { font-size: 15px; margin: 10px 0 14px; }
 
   @media (max-width: 520px) {
     .hero { flex-direction: column; align-items: flex-start; }
@@ -211,6 +226,16 @@
         <p><a class="button" id="open-in-chrome" href="https://tie-games.com/panorun/">Open in Chrome</a></p>
         <p>If nothing happens: tap <strong>&#8942;</strong> or <strong>&#8943;</strong> at the top, then <em>Open in Chrome</em> or <em>Open in browser</em>.</p>
       </div>
+      <p><a href="https://play.google.com/store/apps/details?id=com.tiegames.panorun" class="play-badge" aria-label="Get Panorun on Google Play">
+        <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+          <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+        </svg>
+        <span class="play-badge-text">
+          <span class="play-badge-line1">Get it on</span>
+          <span class="play-badge-line2">Google Play</span>
+        </span>
+      </a></p>
+      <p class="or">Early access: Google Play shows Panorun to its testers for now - to be one, write to <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a>. Or download it here:</p>
       <div id="download-android">
         <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Android</a></p>
       </div>
@@ -226,7 +251,8 @@
       <ul>
         <li>Open this page in your phone's browser (Chrome - not inside another app) and tap the button. When the download is finished, tap <em>Open</em> in the message at the bottom, then <em>Install</em>. Missed it? Chrome's <strong>&#8942;</strong> &rarr; <em>Downloads</em> has the file: tap it there.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
-        <li>Panorun isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
+        <li>Downloaded here, Panorun doesn't come from the Play Store, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
+        <li>Panorun from Google Play and Panorun from this page can't be installed over each other: to change, uninstall the one you have first - that removes the games kept in it.</li>
         <li>A new version installs the same way, over the one you have: your games stay.</li>
       </ul>
     </div>
@@ -264,10 +290,11 @@
 <script>
 // The download links: the newest Panorun release (tag panorun-v<version>) of
 // the site's repository - for Windows its full installer and the small one
-// that downloads what it installs, for Android the APK. Without one, or
-// without GitHub's API, the buttons above lead to the releases page.
+// that downloads what it installs, for Android the APK - of the newest 100
+// releases: Cam2You's come often. Without one among them, or without GitHub's
+// API, the buttons above lead to the releases page.
 (function () {
-  var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
+  var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=100';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
@@ -310,9 +337,7 @@
 
       var windows = document.getElementById('download-windows');
       var release = panorun[0];
-      if (!release) {
-        windows.innerHTML = '<p>The Windows installer is coming soon.</p>';
-      } else {
+      if (release) {
         var full = asset(release, /^Panorun-Setup-[\d.]+\.exe$/);
         var web = asset(release, /^Panorun-Web-Setup-[\d.]+\.exe$/);
         var main = full || web;
@@ -331,9 +356,7 @@
       var android = document.getElementById('download-android');
       var apkRe = /^Panorun-[\d.]+\.apk$/;
       var withApk = panorun.filter(function (r) { return asset(r, apkRe); })[0];
-      if (!withApk) {
-        android.innerHTML = '<p>Panorun for Android is coming soon.</p>';
-      } else {
+      if (withApk) {
         var apk = asset(withApk, apkRe);
         android.innerHTML = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Panorun ' + esc(version(withApk)) + ' for Android</a></p>' +
           '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk)) + '</p>';

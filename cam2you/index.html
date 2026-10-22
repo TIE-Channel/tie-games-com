@@ -330,7 +330,7 @@
 // image, for Linux the AppImage. Without one, or without GitHub's API, the
 // buttons above lead to the releases page.
 (function () {
-  var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
+  var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=100';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
