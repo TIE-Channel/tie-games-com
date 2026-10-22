@@ -205,8 +205,30 @@
       </ul>
     </div>
     <div class="system" id="android">
-      <p class="platform">ANDROID</p>
-      <p>Panorun for Android is coming to Google Play.</p>
+      <p class="platform">ANDROID 7 OR NEWER, 64-BIT</p>
+      <div class="inapp" id="inapp" hidden>
+        <p><strong>Open this page in Chrome first.</strong> It is open inside another app (Telegram, WhatsApp, Gmail…), which can't download files: there the button below does nothing.</p>
+        <p><a class="button" id="open-in-chrome" href="https://tie-games.com/panorun/">Open in Chrome</a></p>
+        <p>If nothing happens: tap <strong>&#8942;</strong> or <strong>&#8943;</strong> at the top, then <em>Open in Chrome</em> or <em>Open in browser</em>.</p>
+      </div>
+      <div id="download-android">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Android</a></p>
+      </div>
+      <!-- Shown once the download starts (script below). -->
+      <div class="next" id="android-next" hidden>
+        <p><strong>Downloading <span id="android-file">Panorun</span>&hellip;</strong> Give it a minute.</p>
+        <ol>
+          <li>When it's finished, tap <em>Open</em> in the message at the bottom of Chrome.</li>
+          <li>No <em>Open</em>, or the message is gone? Tap <strong>&#8942;</strong> at the top right of Chrome, then <em>Downloads</em>, and tap the file there. Or open the <em>Files</em> app (on Xiaomi phones <em>File Manager</em>), then <em>Downloads</em>, and tap the file.</li>
+          <li>Tap <em>Install</em>.</li>
+        </ol>
+      </div>
+      <ul>
+        <li>Open this page in your phone's browser (Chrome - not inside another app) and tap the button. When the download is finished, tap <em>Open</em> in the message at the bottom, then <em>Install</em>. Missed it? Chrome's <strong>&#8942;</strong> &rarr; <em>Downloads</em> has the file: tap it there.</li>
+        <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
+        <li>Panorun isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
+        <li>A new version installs the same way, over the one you have: your games stay.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -218,14 +240,14 @@
   <li><strong>Lets you play together.</strong> Open a room and send its code; whoever joins plays their own game of the same cartridge, and everyone's character runs through everyone else's game, each in a colour of their own, with their line on the map. Up to twelve players a room.</li>
   <li><strong>No server in between.</strong> A room runs in the window of whoever opens it, so friends join it directly; nobody waits on a far-away player's connection.</li>
   <li><strong>Records your runs.</strong> START TRACKING keeps every button you press, so the run can be watched again later.</li>
-  <li><strong>Plays with what you have.</strong> Keyboard or gamepad, with every key and button yours to set.</li>
+  <li><strong>Plays with what you have.</strong> Keyboard or gamepad, with every key and button yours to set. On a phone, a cross on the left and A, B, TURBO A and TURBO B on the right.</li>
 </ul>
 <div class="note">
-  <p><strong>No games are included.</strong> Panorun plays games made for the classic 8-bit console: <code>.nes</code> files, or <code>.zip</code> files with them inside. Independent developers still write new games for this console, and many give them away - search the web for <em>8-bit homebrew games</em>. Or use copies of cartridges you own. Add them with <em>ADD GAMES</em>, or drop them onto the window; Panorun keeps them in <em>Documents\Panorun</em>.</p>
+  <p><strong>No games are included.</strong> Panorun plays games made for the classic 8-bit console: <code>.nes</code> files, or <code>.zip</code> files with them inside. Independent developers still write new games for this console, and many give them away - search the web for <em>8-bit homebrew games</em>. Or use copies of cartridges you own. Add them with <em>ADD GAMES</em>, or drop them onto the window; Panorun keeps them in <em>Documents\Panorun</em>. On a phone, <em>ADD GAMES</em> and <em>CHOOSE FOLDER</em> open your phone's own file picker. Or <em>TRY THE DEMO</em>: a little game of Panorun's own.</p>
 </div>
 
 <h2>Your privacy</h2>
-<p>Panorun has no accounts, no analytics and no advertising. Your games, settings and recordings stay on your computer. Panorun contacts only GitHub, to look for a newer version, and, when you play online, the computer whose room you join: it then shares your name, your character and the level you are in with the players in that room, and the room's computer sees your internet address. Details are in the <a href="/panorun/privacy">Privacy Policy</a>.</p>
+<p>Panorun has no accounts, no analytics and no advertising. Your games, settings and recordings stay on your computer or phone. Panorun contacts only GitHub, to look for a newer version (on Windows), and, when you play online, the computer whose room you join: it then shares your name, your character and the level you are in with the players in that room, and the room's computer sees your internet address. Details are in the <a href="/panorun/privacy">Privacy Policy</a>.</p>
 
 <h2>Links</h2>
 <ul class="links">
@@ -241,47 +263,83 @@
 
 <script>
 // The download links: the newest Panorun release (tag panorun-v<version>) of
-// the site's repository - its full installer, and the small one that
-// downloads what it installs. Without one, or without GitHub's API, the
-// button above leads to the releases page.
+// the site's repository - for Windows its full installer and the small one
+// that downloads what it installs, for Android the APK. Without one, or
+// without GitHub's API, the buttons above lead to the releases page.
 (function () {
   var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=30';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
   // The visitor's own system first.
+  var ua = navigator.userAgent;
   var systems = document.getElementById('systems');
-  if (/Android/i.test(navigator.userAgent)) {
+  if (/Android/i.test(ua)) {
     systems.insertBefore(document.getElementById('android'), systems.firstElementChild);
+    // Opened inside another app (its WebView: "; wv)" in the user agent):
+    // most of them can't download, so the page asks to be opened in Chrome.
+    if (/; wv\)|FBAN|FBAV|Instagram|Telegram|MicroMessenger|Line\//.test(ua)) {
+      document.getElementById('inapp').hidden = false;
+      document.getElementById('open-in-chrome').href = 'intent://' + location.host + location.pathname +
+        '#Intent;scheme=https;package=com.android.chrome;end';
+    }
   }
+
+  // Android: once the APK starts downloading, what to do when it's done.
+  // Chrome says so only in a short message (its notification needs a
+  // permission many phones have off), and Android installs nothing by itself.
+  document.getElementById('download-android').addEventListener('click', function (e) {
+    var link = e.target.closest('a.button');
+    var name = link ? decodeURIComponent(link.href.split('/').pop()) : '';
+    if (!/\.apk$/.test(name)) return;
+    document.getElementById('android-file').textContent = name;
+    document.getElementById('android-next').hidden = false;
+  });
 
   fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (releases) {
-      var release = releases.filter(function (r) {
+      var panorun = releases.filter(function (r) {
         return !r.draft && !r.prerelease && /^panorun-v/.test(r.tag_name);
-      })[0];
+      });
+      function asset(release, re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
+      function version(release) { return release.tag_name.replace(/^panorun-v/, ''); }
+      function date(release) {
+        return new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+
       var windows = document.getElementById('download-windows');
+      var release = panorun[0];
       if (!release) {
         windows.innerHTML = '<p>The Windows installer is coming soon.</p>';
-        return;
+      } else {
+        var full = asset(release, /^Panorun-Setup-[\d.]+\.exe$/);
+        var web = asset(release, /^Panorun-Web-Setup-[\d.]+\.exe$/);
+        var main = full || web;
+        if (main) {
+          var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Panorun ' + esc(version(release)) + ' for Windows</a></p>' +
+            '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
+          if (full && web) {
+            html += '<br>Or the <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
+              '), which downloads Panorun as it installs it.';
+          }
+          windows.innerHTML = html + '</p>';
+        }
       }
-      function asset(re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
-      var version = release.tag_name.replace(/^panorun-v/, '');
-      var date = new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      var full = asset(/^Panorun-Setup-[\d.]+\.exe$/);
-      var web = asset(/^Panorun-Web-Setup-[\d.]+\.exe$/);
-      var main = full || web;
-      if (!main) return;
-      var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Panorun ' + esc(version) + ' for Windows</a></p>' +
-        '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date);
-      if (full && web) {
-        html += '<br>Or the <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
-          '), which downloads Panorun as it installs it.';
+
+      // Android: the newest release with an APK (the first ones had only Windows).
+      var android = document.getElementById('download-android');
+      var apkRe = /^Panorun-[\d.]+\.apk$/;
+      var withApk = panorun.filter(function (r) { return asset(r, apkRe); })[0];
+      if (!withApk) {
+        android.innerHTML = '<p>Panorun for Android is coming soon.</p>';
+      } else {
+        var apk = asset(withApk, apkRe);
+        android.innerHTML = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Panorun ' + esc(version(withApk)) + ' for Android</a></p>' +
+          '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk)) + '</p>';
       }
-      windows.innerHTML = html + '</p>';
     })
-    .catch(function () { /* the button to the releases page stays */ });
+    .catch(function () { /* the buttons to the releases page stay */ });
 })();
 </script>
 
