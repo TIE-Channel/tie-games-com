@@ -159,6 +159,18 @@
   .download .next li { margin-bottom: 6px; color: #333; }
   .download ul li { margin-bottom: 6px; }
 
+  .video { display: block; position: relative; border: 2px solid #1a1a1a; line-height: 0; margin-top: 8px; }
+  .video:hover { background: transparent; }
+  .video img { width: 100%; height: auto; display: block; }
+  .video .play { position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%; background: rgba(181, 0, 38, 0.92); }
+  .video .play::after { content: ''; position: absolute; left: 32px; top: 24px; border-style: solid; border-width: 18px 0 18px 30px; border-color: transparent transparent transparent #fff; }
+  .video:hover .play { background: #1a1a1a; }
+  .caption { font-size: 14px; color: #666; margin: 8px 0 0; }
+  .screens { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 12px; margin: 24px 0 8px; }
+  .screens figure { flex: 0 0 auto; width: 200px; scroll-snap-align: start; }
+  .screens img { width: 200px; height: auto; display: block; border: 1px solid #ccc; }
+  .screens figcaption { font-size: 13px; color: #666; line-height: 1.4; margin-top: 6px; }
+
   @media (max-width: 520px) {
     .hero { flex-direction: column; align-items: flex-start; }
     .download { padding: 16px; }
@@ -258,13 +270,28 @@
   </div>
 </section>
 
+<h2>See it in action</h2>
+<a class="video" href="https://www.youtube.com/watch?v=wXGBg7ioy8w" target="_blank" rel="noopener" aria-label="Watch the Cam2You video on YouTube (40 seconds)">
+  <img src="/cam2you/video.jpg" alt="Cam2You on a phone: seven clips from a trip to Turkey and Malta, ticked, playing as one video" width="1280" height="720" loading="lazy">
+  <span class="play"></span>
+</a>
+<p class="caption">From action camera clips to a finished film, on a phone &mdash; 40 seconds, on YouTube.</p>
+<div class="screens">
+  <figure><img src="/cam2you/screens/1.jpg" width="540" height="960" loading="lazy" alt="The ticked videos playing as one, with the place title Day 2, G&ouml;reme, Turkey"><figcaption>The ticked videos play as one, with their place titles.</figcaption></figure>
+  <figure><img src="/cam2you/screens/2.jpg" width="540" height="960" loading="lazy" alt="A title card, But it all started like this, in the preview"><figcaption>Title cards in the preview, before anything is made.</figcaption></figure>
+  <figure><img src="/cam2you/screens/3.jpg" width="540" height="960" loading="lazy" alt="The edit plan: a prompt for the music, the teaser and the title cards"><figcaption>The edit planned: its cards, the teaser and a prompt for its music.</figcaption></figure>
+  <figure><img src="/cam2you/screens/4.jpg" width="540" height="960" loading="lazy" alt="The teaser being trimmed, its video chosen in the list"><figcaption>The teaser: any part of any of the videos.</figcaption></figure>
+  <figure><img src="/cam2you/screens/5.jpg" width="540" height="960" loading="lazy" alt="Uploads: Auto-edit making one video from seven, step by step"><figcaption>Auto-edit makes the film on the phone.</figcaption></figure>
+</div>
+
 <h2>What it does</h2>
 <ul>
   <li><strong>Finds your videos</strong> on a GoPro connected by USB, over the camera's Wi-Fi or on your home network, as well as on memory cards, in folders and in your phone's gallery.</li>
-  <li><strong>Previews and cuts</strong>: trim the start and end of each video, or keep several parts of it, frame-exact.</li>
+  <li><strong>Previews and cuts</strong>: trim the start and end of each video, or keep several parts of it, frame-exact. The ticked videos play as one, with the teaser, title cards and place titles the edit will have.</li>
   <li><strong>Joins videos</strong> into one with a transition of your choice, or uploads them as a playlist in the order you arrange.</li>
-  <li><strong>Suggests names</strong> from where and when the videos were recorded, such as <em>Rovinj, Croatia (August 2026)</em>, using the camera's GPS and a place database built into the app.</li>
-  <li><strong>Edits by itself</strong> (Pro): with Auto-edit, the videos you upload become one film, cut and put together on your device, with music if you like.</li>
+  <li><strong>Suggests names</strong> from where and when the videos were recorded, such as <em>Rovinj, Croatia (August 2026)</em>, with the places in your language, using the camera's GPS and a place database built into the app.</li>
+  <li><strong>Edits by itself</strong> (Pro): with Auto-edit, the videos you upload become one film, cut and put together on your device, with music if you like. Analyze plans it first: a teaser and an ending, title cards and place titles to move or rewrite on the playback line, and prompts to make its music with AI.</li>
+  <li><strong>Keeps your work</strong>: the folder, the ticked videos, their cuts and the edit are there when you come back, and Save and Load keep them under a name.</li>
   <li><strong>Uploads reliably</strong>: a queue that resumes after interruptions and waits for YouTube's daily limits.</li>
   <li><strong>Moves videos between your devices</strong>: PeerLink sends them between your phone and your computer on the same network, and Cam2You opens folders shared on your network (SMB, FTP).</li>
 </ul>
@@ -338,8 +365,18 @@
   fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (releases) {
+      // Newest version first: GitHub lists releases by the date of the commit
+      // each was tagged on, and releases on one commit by tag (0.2.9 before 0.2.10).
+      function parts(r) { return r.tag_name.replace(/^cam2you-v/, '').split('.').map(Number); }
       var cam2you = releases.filter(function (r) {
         return !r.draft && !r.prerelease && /^cam2you-v/.test(r.tag_name);
+      }).sort(function (a, b) {
+        var x = parts(a), y = parts(b);
+        for (var i = 0; i < Math.max(x.length, y.length); i++) {
+          var d = (y[i] || 0) - (x[i] || 0);
+          if (d) return d;
+        }
+        return 0;
       });
       function asset(release, re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
       function date(release) {

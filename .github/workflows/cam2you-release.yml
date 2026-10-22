@@ -687,7 +687,16 @@ jobs:
           if [ "$REPLACE" = true ]; then
             gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes > /dev/null 2>&1 || true
           fi
+          # The tag on a commit of its own, made now (the site's files as this run
+          # started): GitHub lists releases by the date of the commit they are
+          # tagged on, and older Cam2You apps take the first in that list. On the
+          # site's newest commit, releases made between two site changes would
+          # share its date and come by tag name (0.2.9 before 0.2.10).
+          export GIT_AUTHOR_NAME='github-actions[bot]' GIT_COMMITTER_NAME='github-actions[bot]'
+          export GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com' GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          commit=$(git -C ../site commit-tree "$GITHUB_SHA^{tree}" -p "$GITHUB_SHA" -m "Cam2You $VERSION")
+          git -C ../site push origin "$commit:refs/tags/$TAG"
           draft=()
           if [ "$PUBLISH" != true ]; then draft=(--draft); fi
-          gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+          gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "Cam2You $VERSION" --notes-file ../notes.md "${draft[@]}"
