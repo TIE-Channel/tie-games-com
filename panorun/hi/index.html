@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panorun - पूरा लेवल नज़र में | TIE-Games</title>
+<meta name="description" content="Panorun क्लासिक 8-बिट कंसोल गेमों का एक एम्युलेटर है जो पूरा लेवल नज़र में रखता है, और आपको अपने साथ दौड़ते दोस्तों के साथ ऑनलाइन खेलने देता है।">
+<link rel="icon" type="image/x-icon" href="/panorun/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/panorun/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/panorun/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/panorun/apple-touch-icon.png">
+<link rel="canonical" href="https://tie-games.com/panorun/hi/">
+<meta property="og:title" content="Panorun - पूरा लेवल नज़र में">
+<meta property="og:description" content="Panorun क्लासिक 8-बिट कंसोल गेमों का एक एम्युलेटर है जो पूरा लेवल नज़र में रखता है, और आपको अपने साथ दौड़ते दोस्तों के साथ ऑनलाइन खेलने देता है।">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tie-games.com/panorun/hi/">
+<meta property="og:image" content="https://tie-games.com/panorun/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Panorun">
+<meta name="twitter:description" content="Panorun क्लासिक 8-बिट कंसोल गेमों का एक एम्युलेटर है जो पूरा लेवल नज़र में रखता है, और आपको अपने साथ दौड़ते दोस्तों के साथ ऑनलाइन खेलने देता है।">
+<meta name="twitter:image" content="https://tie-games.com/panorun/og.jpg">
+<!-- language links -->
+<link rel="alternate" hreflang="en" href="https://tie-games.com/panorun/">
+<link rel="alternate" hreflang="es" href="https://tie-games.com/panorun/es/">
+<link rel="alternate" hreflang="de" href="https://tie-games.com/panorun/de/">
+<link rel="alternate" hreflang="fr" href="https://tie-games.com/panorun/fr/">
+<link rel="alternate" hreflang="pt-BR" href="https://tie-games.com/panorun/pt-br/">
+<link rel="alternate" hreflang="ru" href="https://tie-games.com/panorun/ru/">
+<link rel="alternate" hreflang="ja" href="https://tie-games.com/panorun/ja/">
+<link rel="alternate" hreflang="ko" href="https://tie-games.com/panorun/ko/">
+<link rel="alternate" hreflang="zh-Hans" href="https://tie-games.com/panorun/zh/">
+<link rel="alternate" hreflang="hi" href="https://tie-games.com/panorun/hi/">
+<link rel="alternate" hreflang="id" href="https://tie-games.com/panorun/id/">
+<link rel="alternate" hreflang="ar" href="https://tie-games.com/panorun/ar/">
+<link rel="alternate" hreflang="x-default" href="https://tie-games.com/panorun/">
+<!-- /language links -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #b50026; text-decoration: none; border-bottom: 1px solid #b50026; }
+  a:hover { background: #b50026; color: #fff; }
+
+  .header {
+    border-bottom: 2px solid #1a1a1a;
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .nav {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo-text {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #1a1a1a;
+    border: none;
+  }
+  .logo-text:hover { background: transparent; color: #1a1a1a; }
+  .logo-text .accent { color: #b50026; }
+  .back-link {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    border: none;
+  }
+  .back-link:hover { background: transparent; color: #b50026; }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #b50026;
+  }
+  .hero img { width: 88px; height: 88px; object-fit: contain; flex: none; }
+  h1 {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(32px, 6vw, 48px);
+    letter-spacing: 0.05em;
+    color: #1a1a1a;
+    line-height: 1.1;
+  }
+  .tagline { font-size: 18px; color: #333; margin-top: 8px; }
+  h2 {
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    margin-top: 40px;
+    margin-bottom: 16px;
+  }
+  p { margin-bottom: 16px; color: #333; }
+  ul { padding-left: 24px; margin-bottom: 16px; }
+  ul li { margin-bottom: 8px; color: #333; }
+  code { font-family: 'Courier New', monospace; font-size: 14px; background: #f5f5f5; padding: 1px 4px; }
+
+  .note {
+    background: #f5f5f5;
+    border-left: 4px solid #b50026;
+    padding: 16px 20px;
+    margin: 24px 0;
+  }
+  .note p:last-child { margin-bottom: 0; }
+
+  .links { list-style: none; padding: 0; }
+  .links li { margin-bottom: 10px; }
+
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 2px solid #1a1a1a;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    color: #666;
+  }
+  .footer p { color: #666; margin-bottom: 8px; }
+
+  .download {
+    border: 2px solid #1a1a1a;
+    padding: 24px;
+    margin: 32px 0 8px;
+  }
+  .download h2 { margin-top: 0; }
+  .download .platform { font-family: 'Courier New', monospace; font-size: 13px; letter-spacing: 0.05em; color: #666; margin-bottom: 16px; }
+  .button {
+    display: inline-block;
+    background: #b50026;
+    color: #fff;
+    border: 2px solid #b50026;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .button:hover { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+  .download .file { font-size: 14px; color: #666; margin: 10px 0 16px; }
+  .download .system + .system { border-top: 1px solid #ccc; margin-top: 24px; padding-top: 24px; }
+  .download ul { font-size: 15px; margin-bottom: 0; }
+  .download .inapp { border: 2px solid #b50026; padding: 4px 16px; margin-bottom: 16px; font-size: 15px; }
+  .download .inapp[hidden] { display: none; }
+  .download .next { background: #f5f5f5; border-left: 4px solid #b50026; padding: 12px 16px 2px; margin-bottom: 16px; font-size: 15px; }
+  .download .next[hidden] { display: none; }
+  .download .next p { margin-bottom: 8px; }
+  .download .next ol { padding-left: 24px; margin-bottom: 10px; }
+  .download .next li { margin-bottom: 6px; color: #333; }
+  .download ul li { margin-bottom: 6px; }
+  .download .test { background: #f5f5f5; border-left: 4px solid #b50026; padding: 12px 16px 2px; margin-bottom: 16px; font-size: 15px; }
+  .download .test p { margin-bottom: 8px; }
+  .download .test ol { padding-left: 24px; margin-bottom: 10px; }
+  .download .test li { margin-bottom: 6px; color: #333; }
+  .play-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 2px solid #1a1a1a;
+  }
+  .play-badge:hover { background: #b50026; border-color: #b50026; color: #fff; }
+  .play-badge svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .play-badge-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+  .play-badge-line1 { font-size: 9px; letter-spacing: 0.05em; opacity: 0.85; text-transform: uppercase; }
+  .play-badge-line2 { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+  .download .or { font-size: 15px; margin: 10px 0 14px; }
+
+  @media (max-width: 520px) {
+    .hero { flex-direction: column; align-items: flex-start; }
+    .download { padding: 16px; }
+    .button { display: block; text-align: center; }
+  }
+  /* languages */
+  .languages { position: relative; font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; }
+  .languages summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+  .languages summary::-webkit-details-marker { display: none; }
+  .languages summary svg { width: 16px; height: 16px; }
+  .languages ul { position: absolute; right: 0; top: 24px; background: #fff; border: 2px solid #1a1a1a; list-style: none; padding: 6px 0; margin: 0; z-index: 20; min-width: 200px; }
+  [dir="rtl"] .languages ul { right: auto; left: 0; }
+  .languages li { margin: 0; }
+  .languages li a { display: block; padding: 4px 14px; border: none; color: #1a1a1a; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; letter-spacing: 0; font-weight: 400; }
+  .languages li a:hover { background: #b50026; color: #fff; }
+  .languages li a.here { color: #b50026; font-weight: 700; }
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] .platform, [dir="rtl"] .button,
+  [dir="rtl"] .back-link, [dir="rtl"] .play-badge-line2 { letter-spacing: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif; }
+  [dir="rtl"] ul, [dir="rtl"] ol { padding-left: 0; padding-right: 24px; }
+  [dir="rtl"] .links { padding-right: 0; }
+  [dir="rtl"] .note, [dir="rtl"] .download .test, [dir="rtl"] .download .next {
+    border-left: none; border-right: 4px solid #b50026; }
+  /* /languages */
+</style>
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="/" class="logo-text">TIE<span class="accent">-</span>GAMES</a>
+    <!-- languages -->
+    <details class="languages"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><span>हिन्दी</span></summary><ul><li><a href="/panorun/" hreflang="en" lang="en" data-language="en">English</a></li><li><a href="/panorun/es/" hreflang="es" lang="es" data-language="es">Español</a></li><li><a href="/panorun/de/" hreflang="de" lang="de" data-language="de">Deutsch</a></li><li><a href="/panorun/fr/" hreflang="fr" lang="fr" data-language="fr">Français</a></li><li><a href="/panorun/pt-br/" hreflang="pt-BR" lang="pt-BR" data-language="pt-br">Português (Brasil)</a></li><li><a href="/panorun/ru/" hreflang="ru" lang="ru" data-language="ru">Русский</a></li><li><a href="/panorun/ja/" hreflang="ja" lang="ja" data-language="ja">日本語</a></li><li><a href="/panorun/ko/" hreflang="ko" lang="ko" data-language="ko">한국어</a></li><li><a href="/panorun/zh/" hreflang="zh-Hans" lang="zh-Hans" data-language="zh">简体中文</a></li><li><a href="/panorun/hi/" hreflang="hi" lang="hi" data-language="hi" class="here">हिन्दी</a></li><li><a href="/panorun/id/" hreflang="id" lang="id" data-language="id">Bahasa Indonesia</a></li><li><a href="/panorun/ar/" hreflang="ar" lang="ar" data-language="ar">العربية</a></li></ul></details>
+    <!-- /languages -->
+<a href="/" class="back-link">&larr; वापस</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<div class="hero">
+  <img src="/panorun/icon-264.png" alt="Panorun आइकन">
+  <div>
+    <h1>Panorun</h1>
+    <p class="tagline">पूरा लेवल नज़र में, आपके दोस्त आपके साथ दौड़ते हुए।</p>
+  </div>
+</div>
+
+<p>Panorun क्लासिक 8-बिट कंसोल गेमों का एक एम्युलेटर है जो पूरा लेवल नज़र में रखता है: आप जिस भी हिस्से से स्क्रॉल करके गुज़रे हैं, वह गेम के चारों ओर स्क्रीन पर बना रहता है। साथ में ऑनलाइन खेलें, और आपके दोस्त आपके अपने गेम में आपके साथ दौड़ते हैं। Panorun को TIE-Games बनाता है, जो जर्मनी के ड्रेसडेन का एक स्वतंत्र स्टूडियो है।</p>
+<p>आपके पास Android फ़ोन है? <a href="#test">Google Play पर Panorun की टेस्टिंग में मदद करें</a>।</p>
+
+<section class="download" id="download">
+  <h2>डाउनलोड</h2>
+  <!-- The buttons name the newest release, written here with each release; the script below puts in
+       a newer panorun-v* release of github.com/TIE-Channel/tie-games-com if there is one, and puts the
+       visitor's own system first. -->
+  <div id="systems">
+    <div class="system" id="windows">
+      <p class="platform">WINDOWS 10 और 11, 64-बिट</p>
+      <div id="download-windows">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Web-Setup-0.1.18.exe">Windows के लिए Panorun 0.1.18 डाउनलोड करें</a></p>
+        <p class="file">Panorun-Web-Setup-0.1.18.exe &middot; 2 MB &middot; 27 अक्तूबर 2026 &middot; इंस्टॉल करते समय Panorun डाउनलोड करता है<br>या <a href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Setup-0.1.18.exe">पूरा इंस्टॉलर</a> (27 MB), जिसमें सब कुछ है: यह बिना कनेक्शन के इंस्टॉल होता है।</p>
+      </div>
+      <ul>
+        <li>इंस्टॉलर पूछता है कि कहाँ इंस्टॉल करना है और क्या डेस्कटॉप पर शॉर्टकट रखना है। एडमिनिस्ट्रेटर अधिकारों की ज़रूरत नहीं है।</li>
+        <li>इंस्टॉलर पर अभी कोड-साइन नहीं है: अगर Windows <em>Windows protected your PC</em> कहे, तो <em>More info</em> पर क्लिक करें, फिर <em>Run anyway</em> पर।</li>
+        <li>उसके बाद Panorun खुद को अपडेट करता है: जब वह कहे कि नया वर्ज़न आया है, तो <em>Update</em> पर क्लिक करें।</li>
+        <li>Panorun हटाने के लिए: Windows Settings &rarr; Apps &rarr; Installed apps &rarr; Panorun &rarr; Uninstall। आपके गेम और रिकॉर्डिंग <em>Documents\Panorun</em> में बने रहते हैं।</li>
+      </ul>
+    </div>
+    <div class="system" id="android">
+      <p class="platform">ANDROID 7 या नया, 64-बिट</p>
+      <div class="inapp" id="inapp" hidden>
+        <p><strong>पहले यह पेज Chrome में खोलें।</strong> यह किसी दूसरे ऐप (Telegram, WhatsApp, Gmail…) के अंदर खुला है, जो फ़ाइलें डाउनलोड नहीं कर सकता: वहाँ नीचे का बटन कुछ नहीं करता।</p>
+        <p><a class="button" id="open-in-chrome" href="https://tie-games.com/panorun/hi/">Chrome में खोलें</a></p>
+        <p>अगर कुछ न हो: ऊपर <strong>&#8942;</strong> या <strong>&#8943;</strong> पर टैप करें, फिर <em>Chrome में खोलें</em> या <em>ब्राउज़र में खोलें</em> पर।</p>
+      </div>
+      <p><a href="https://play.google.com/store/apps/details?id=com.tiegames.panorun" class="play-badge" aria-label="Google Play पर Panorun पाएँ">
+        <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+          <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+        </svg>
+        <span class="play-badge-text">
+          <span class="play-badge-line1">इसे पाएँ</span>
+          <span class="play-badge-line2">Google Play</span>
+        </span>
+      </a></p>
+      <div class="test" id="test">
+        <p><strong>अर्ली ऐक्सेस: Panorun Google Play पर टेस्टिंग में है</strong>, सबके लिए खुलने से पहले, और कोई भी टेस्ट में शामिल हो सकता है:</p>
+        <ol>
+          <li>अपने Google खाते से <a href="https://groups.google.com/g/panorun-testers">Panorun testers</a> ग्रुप से जुड़ें: <em>Join group</em>।</li>
+          <li><a href="https://play.google.com/apps/testing/com.tiegames.panorun">Google Play पर Panorun का टेस्ट</a> खोलें और <em>Become a tester</em> पर टैप करें।</li>
+          <li>ऊपर दिए Google Play बटन से Panorun इंस्टॉल करें।</li>
+        </ol>
+        <p>इसे दो हफ़्ते रखें और बीच-बीच में खेलें - <em>डेमो आज़माएँ</em>, अपना कोई गेम, दूसरों के साथ रूम - और हमें बताएँ कि क्या ठीक चलता है और क्या नहीं, ग्रुप में या <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a> पर। जब काफ़ी टेस्टर दो हफ़्ते खेल लेंगे, Google Play Panorun को सबके लिए खोल देगा।</p>
+      </div>
+      <p class="or">या यहाँ से डाउनलोड करें:</p>
+      <div id="download-android">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-0.1.18.apk">Android के लिए Panorun 0.1.18 डाउनलोड करें</a></p>
+        <p class="file">Panorun-0.1.18.apk &middot; 25 MB &middot; 28 अक्तूबर 2026</p>
+      </div>
+      <!-- Shown once the download starts (script below). -->
+      <div class="next" id="android-next" hidden>
+        <p><strong><span id="android-file">Panorun</span> डाउनलोड हो रहा है&hellip;</strong> एक मिनट दें।</p>
+        <ol>
+          <li>पूरा होने पर Chrome के नीचे वाले संदेश में <em>खोलें</em> पर टैप करें।</li>
+          <li><em>खोलें</em> नहीं है, या संदेश चला गया? Chrome में ऊपर दाईं ओर <strong>&#8942;</strong> पर टैप करें, फिर <em>डाउनलोड</em> पर, और वहाँ फ़ाइल पर टैप करें। या <em>Files</em> ऐप (Xiaomi फ़ोन पर <em>File Manager</em>) खोलें, फिर <em>Downloads</em>, और फ़ाइल पर टैप करें।</li>
+          <li><em>इंस्टॉल करें</em> पर टैप करें।</li>
+        </ol>
+      </div>
+      <ul>
+        <li>यह पेज अपने फ़ोन के ब्राउज़र (Chrome - किसी दूसरे ऐप के अंदर नहीं) में खोलें और बटन पर टैप करें। डाउनलोड पूरा होने पर नीचे वाले संदेश में <em>खोलें</em>, फिर <em>इंस्टॉल करें</em> पर टैप करें। छूट गया? Chrome के <strong>&#8942;</strong> &rarr; <em>डाउनलोड</em> में फ़ाइल है: वहाँ उस पर टैप करें।</li>
+        <li>पहली बार Android पूछता है कि क्या आपका ब्राउज़र ऐप इंस्टॉल कर सकता है: अनुमति दें, वापस जाएँ और फिर से <em>इंस्टॉल करें</em> पर टैप करें।</li>
+        <li>यहाँ से डाउनलोड किया गया Panorun Play Store से नहीं आता, इसलिए Google Play Protect शायद इसे न पहचाने: <em>ज़्यादा जानकारी</em> पर टैप करें, फिर <em>फिर भी इंस्टॉल करें</em> पर।</li>
+        <li>Google Play वाला Panorun और इस पेज वाला Panorun एक-दूसरे के ऊपर इंस्टॉल नहीं हो सकते: बदलने के लिए पहले मौजूदा वाला अनइंस्टॉल करें - इससे उसमें रखे गेम हट जाते हैं।</li>
+        <li>नया वर्ज़न भी इसी तरह मौजूदा वाले के ऊपर इंस्टॉल होता है: आपके गेम बने रहते हैं।</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<h2>यह क्या करता है</h2>
+<ul>
+  <li><strong>लेवल को नज़र में रखता है।</strong> कंसोल एक बार में एक ही स्क्रीन बनाता है और बाकी भूल जाता है। Panorun बनाई गई हर स्क्रीन रखता है और गेम के चारों ओर लेवल को उसकी सही जगह पर बनाता है, ताकि जो ज़मीन आप पार कर चुके हैं वह स्क्रीन पर बाएँ, ऊपर और नीचे बनी रहे।</li>
+  <li><strong>खेलते-खेलते नक्शा बनाता है।</strong> गेम के नीचे एक पट्टी अब तक का लेवल दिखाती है, और उस पर आप।</li>
+  <li><strong>साथ खेलने देता है।</strong> रूम खोलें और उसका कोड भेजें, या रूम सर्वर पर दिए रूमों में से किसी से जुड़ें; जो भी जुड़ता है वह उसी गेम की अपनी कॉपी खेलता है, और हर किसी का कैरेक्टर बाकी सबके गेम में दौड़ता है, हर एक अपने रंग में, नक्शे पर अपनी लाइन के साथ। बहुत आगे निकला गेम बाकी का इंतज़ार करता है, ताकि सब साथ रहें। एक रूम में बारह खिलाड़ी तक।</li>
+  <li><strong>खेलते हुए बात करें।</strong> रूम में बोलने के लिए माइक्रोफ़ोन बटन (कंप्यूटर पर V) दबाकर रखें, या उसे चालू रखने के लिए टैप करें। आपकी अपनी गेम की आवाज़ और आसपास का शोर हटा दिया जाता है, ताकि दूसरे आपकी आवाज़ सुनें, आपका गेम या आपका कमरा नहीं।</li>
+  <li><strong>रूम सर्वर, या कोई नहीं।</strong> ऑनलाइन खेलें वेब पर Panorun के रूम सर्वर पर रूम खोलता है, जहाँ आपके दोस्त उन्हें देखकर जुड़ सकते हैं। या लोकल खेलें: रूम उसे खोलने वाले की विंडो में चलता है, और दोस्त सीधे जुड़ते हैं। Windows के लिए Panorun के साथ एक रूम सर्वर आता है जिसे कोई भी चला सकता है।</li>
+  <li><strong>असली लड़ाई।</strong> जैसे ही Panorun जान लेता है कि गेम आपकी हेल्थ कहाँ रखता है, दूसरे आपके कैरेक्टर पर वार कर सकते हैं, और यह वैसे ही चोट पहुँचाता है जैसे गेम के अपने दुश्मन: आप पीछे धकेले जाते हैं और आपकी हेल्थ घटती है। सबकी हेल्थ उनके नाम के ऊपर दिखती है।</li>
+  <li><strong>हर गेम खुद सीखता है।</strong> जब आप खेलते हैं, Panorun सीखता है कि आपका कैरेक्टर कैसा दिखता है और कौन-सा बटन कूदता या वार करता है, और रूम के खिलाड़ी आपस में बाँटते हैं कि उनका Panorun गेम के बारे में क्या जानता है।</li>
+  <li><strong>आपके खेल रिकॉर्ड करता है।</strong> रिकॉर्ड हर दबाया बटन रखता है, और रीप्ले उस खेल को शुरू से फिर चलाता है।</li>
+  <li><strong>जो आपके पास है उसी से खेलें।</strong> कीबोर्ड या गेमपैड, हर कुंजी और बटन आप खुद तय करें। फ़ोन पर बाईं ओर क्रॉस और दाईं ओर A, B, TURBO A और TURBO B।</li>
+  <li><strong>फ़ोन पर भी स्मूद।</strong> कंसोल का प्रोसेसर, तस्वीर और आवाज़ के चिप नेटिव कोड में चलते हैं, इसलिए Panorun फ़ोन पर स्मूद चलता है, रूम में दोस्तों के साथ भी।</li>
+</ul>
+<div class="note">
+  <p><strong>कोई गेम शामिल नहीं है।</strong> Panorun क्लासिक 8-बिट कंसोल के लिए बने गेम चलाता है। स्वतंत्र डेवलपर आज भी इस कंसोल के लिए नए गेम बनाते हैं, और कई उन्हें मुफ़्त देते हैं - वेब पर <em>8-bit homebrew games</em> खोजें। या अपने गेमों की कॉपी इस्तेमाल करें। उन्हें <em>गेम जोड़ें</em> से जोड़ें, या विंडो पर छोड़ दें; Panorun उन्हें <em>Documents\Panorun</em> में रखता है। फ़ोन पर <em>गेम जोड़ें</em> और <em>फ़ोल्डर चुनें</em> आपके फ़ोन का अपना फ़ाइल पिकर खोलते हैं। या <em>डेमो आज़माएँ</em>: Panorun का अपना एक छोटा गेम।</p>
+</div>
+
+<h2>आपकी निजता</h2>
+<p>Panorun में कोई खाता, कोई एनालिटिक्स और कोई विज्ञापन नहीं है। आपके गेम, सेटिंग और रिकॉर्डिंग आपके कंप्यूटर या फ़ोन पर ही रहते हैं। Panorun सिर्फ़ इनसे संपर्क करता है: GitHub, नया वर्ज़न देखने के लिए (Windows पर); हमारा रूम सर्वर और यह वेबसाइट, उन गेमों की सूची के लिए जिनकी गेम फ़ाइल हमने प्रकाशित की है, और सूची के किसी गेम को शुरू करने पर उसकी फ़ाइल के लिए; और, जब आप ऑनलाइन खेलते हैं, रूम सर्वर या वह कंप्यूटर जिसके रूम में आप जुड़ते हैं: तब यह आपका नाम, आपका कैरेक्टर, उसकी हेल्थ और आप किस लेवल में हैं, उस रूम के खिलाड़ियों के साथ साझा करता है, और रूम सर्वर या रूम का कंप्यूटर आपका इंटरनेट पता देखता है। जब आप रूम में माइक्रोफ़ोन बटन दबाकर रखते हैं या चालू करते हैं, तो आपकी आवाज़ उस रूम के खिलाड़ियों तक लाइव जाती है; वह कहीं रिकॉर्ड या सहेजी नहीं जाती। विवरण <a href="/panorun/privacy">गोपनीयता नीति</a> (अंग्रेज़ी में) में है।</p>
+
+<h2 id="licences">ओपन-सोर्स लाइसेंस</h2>
+<p>Panorun ओपन-सोर्स सॉफ़्टवेयर से बना है: दूसरों के अलावा Python, pygame और SDL, NumPy, और आवाज़ के लिए Xiph.Org के Opus, RNNoise और speexdsp। हर एक अपने लाइसेंस के तहत इस्तेमाल होता है। हर लाइसेंस के पाठ के साथ पूरी सूची Panorun में ही है (सेटिंग &rarr; लाइसेंस), Windows पर प्रोग्राम के पास, और यहाँ: <a href="/panorun/third-party-notices.txt">थर्ड-पार्टी नोटिस</a>।</p>
+
+<h2>लिंक</h2>
+<ul class="links">
+  <li><a href="/panorun/privacy">गोपनीयता नीति</a></li>
+  <li><a href="/panorun/terms">उपयोग की शर्तें</a></li>
+  <li><a href="/panorun/third-party-notices.txt">ओपन-सोर्स लाइसेंस</a></li>
+  <li>संपर्क: <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a></li>
+</ul>
+
+<div class="footer">
+  <p>&copy; 2026 TIE-Games. सर्वाधिकार सुरक्षित।</p>
+  <p>Panorun के साथ कोई गेम नहीं आता। गेमों के नाम उनके मालिकों के ट्रेडमार्क हैं; Panorun उनसे संबद्ध नहीं है और न ही उनके द्वारा समर्थित है। किसी गेम के बारे में हम सिर्फ़ वही प्रकाशित करते हैं जो Panorun उसके बारे में जानता है - वह कैरेक्टर की हेल्थ कहाँ रखता है, कौन-से बटन वार करते हैं - गेम का कोई भी हिस्सा कभी नहीं। कुछ हटवाने के लिए <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a> पर लिखें।</p>
+</div>
+</main>
+
+<script>
+// The download links: the newest Panorun release (tag panorun-v<version>) of
+// the site's repository - for Windows its full installer and the small one
+// that downloads what it installs, for Android the APK - of the newest 100
+// releases: Cam2You's come often. Without one among them, or without GitHub's
+// API, the buttons above stay as each release writes them.
+(function () {
+  // The words the script writes, in the page's language: each language's
+  // page has its own (.github/scripts/panorun-languages.py writes them).
+  var WORDS = {
+    windows: 'Windows के लिए Panorun {version} डाउनलोड करें',
+    android: 'Android के लिए Panorun {version} डाउनलोड करें',
+    small: 'इंस्टॉल करते समय Panorun डाउनलोड करता है',
+    full: 'या <a href="{url}">पूरा इंस्टॉलर</a> ({size}), जिसमें सब कुछ है: यह बिना कनेक्शन के इंस्टॉल होता है।',
+    locale: 'hi-IN'
+  };
+  function say(words, values) {
+    return words.replace(/{(\w+)}/g, function (all, name) { return values[name]; });
+  }
+  var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=100';
+  function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
+  function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+
+  // The visitor's own system first.
+  var ua = navigator.userAgent;
+  var systems = document.getElementById('systems');
+  if (/Android/i.test(ua)) {
+    systems.insertBefore(document.getElementById('android'), systems.firstElementChild);
+    // Opened inside another app (its WebView: "; wv)" in the user agent):
+    // most of them can't download, so the page asks to be opened in Chrome.
+    if (/; wv\)|FBAN|FBAV|Instagram|Telegram|MicroMessenger|Line\//.test(ua)) {
+      document.getElementById('inapp').hidden = false;
+      document.getElementById('open-in-chrome').href = 'intent://' + location.host + location.pathname +
+        '#Intent;scheme=https;package=com.android.chrome;end';
+    }
+  }
+
+  // Android: once the APK starts downloading, what to do when it's done.
+  // Chrome says so only in a short message (its notification needs a
+  // permission many phones have off), and Android installs nothing by itself.
+  document.getElementById('download-android').addEventListener('click', function (e) {
+    var link = e.target.closest('a.button');
+    var name = link ? decodeURIComponent(link.href.split('/').pop()) : '';
+    if (!/\.apk$/.test(name)) return;
+    document.getElementById('android-file').textContent = name;
+    document.getElementById('android-next').hidden = false;
+  });
+
+  fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (releases) {
+      var panorun = releases.filter(function (r) {
+        return !r.draft && !r.prerelease && /^panorun-v/.test(r.tag_name);
+      });
+      function asset(release, re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
+      function version(release) { return release.tag_name.replace(/^panorun-v/, ''); }
+      function date(release) {
+        return new Date(release.published_at).toLocaleDateString(WORDS.locale, { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+
+      var windows = document.getElementById('download-windows');
+      var release = panorun[0];
+      if (release) {
+        var full = asset(release, /^Panorun-Setup-[\d.]+\.exe$/);
+        var web = asset(release, /^Panorun-Web-Setup-[\d.]+\.exe$/);
+        // The small installer first; the full one, for installing without a
+        // connection, under it.
+        var main = web || full;
+        if (main) {
+          var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">' +
+            say(WORDS.windows, { version: esc(version(release)) }) + '</a></p>' +
+            '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
+          if (full && web) {
+            html += ' &middot; ' + WORDS.small + '<br>' +
+              say(WORDS.full, { url: esc(full.browser_download_url), size: mb(full.size) });
+          }
+          windows.innerHTML = html + '</p>';
+        }
+      }
+
+      // Android: the newest release with an APK (the first ones had only Windows).
+      var android = document.getElementById('download-android');
+      var apkRe = /^Panorun-[\d.]+\.apk$/;
+      var withApk = panorun.filter(function (r) { return asset(r, apkRe); })[0];
+      if (withApk) {
+        var apk = asset(withApk, apkRe);
+        android.innerHTML = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">' +
+          say(WORDS.android, { version: esc(version(withApk)) }) + '</a></p>' +
+          '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk)) + '</p>';
+      }
+    })
+    .catch(function () { /* the buttons to the releases page stay */ });
+})();
+</script>
+
+
+
+
+</body>
+</html>

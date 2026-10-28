@@ -21,6 +21,21 @@
 <meta name="twitter:title" content="Panorun">
 <meta name="twitter:description" content="Panorun is an emulator for classic 8-bit console games that keeps the whole level in view, and lets you play together online with your friends running beside you.">
 <meta name="twitter:image" content="https://tie-games.com/panorun/og.jpg">
+<!-- language links -->
+<link rel="alternate" hreflang="en" href="https://tie-games.com/panorun/">
+<link rel="alternate" hreflang="es" href="https://tie-games.com/panorun/es/">
+<link rel="alternate" hreflang="de" href="https://tie-games.com/panorun/de/">
+<link rel="alternate" hreflang="fr" href="https://tie-games.com/panorun/fr/">
+<link rel="alternate" hreflang="pt-BR" href="https://tie-games.com/panorun/pt-br/">
+<link rel="alternate" hreflang="ru" href="https://tie-games.com/panorun/ru/">
+<link rel="alternate" hreflang="ja" href="https://tie-games.com/panorun/ja/">
+<link rel="alternate" hreflang="ko" href="https://tie-games.com/panorun/ko/">
+<link rel="alternate" hreflang="zh-Hans" href="https://tie-games.com/panorun/zh/">
+<link rel="alternate" hreflang="hi" href="https://tie-games.com/panorun/hi/">
+<link rel="alternate" hreflang="id" href="https://tie-games.com/panorun/id/">
+<link rel="alternate" hreflang="ar" href="https://tie-games.com/panorun/ar/">
+<link rel="alternate" hreflang="x-default" href="https://tie-games.com/panorun/">
+<!-- /language links -->
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -183,6 +198,25 @@
     .download { padding: 16px; }
     .button { display: block; text-align: center; }
   }
+  /* languages */
+  .languages { position: relative; font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; }
+  .languages summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+  .languages summary::-webkit-details-marker { display: none; }
+  .languages summary svg { width: 16px; height: 16px; }
+  .languages ul { position: absolute; right: 0; top: 24px; background: #fff; border: 2px solid #1a1a1a; list-style: none; padding: 6px 0; margin: 0; z-index: 20; min-width: 200px; }
+  [dir="rtl"] .languages ul { right: auto; left: 0; }
+  .languages li { margin: 0; }
+  .languages li a { display: block; padding: 4px 14px; border: none; color: #1a1a1a; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; letter-spacing: 0; font-weight: 400; }
+  .languages li a:hover { background: #b50026; color: #fff; }
+  .languages li a.here { color: #b50026; font-weight: 700; }
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] .platform, [dir="rtl"] .button,
+  [dir="rtl"] .back-link, [dir="rtl"] .play-badge-line2 { letter-spacing: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif; }
+  [dir="rtl"] ul, [dir="rtl"] ol { padding-left: 0; padding-right: 24px; }
+  [dir="rtl"] .links { padding-right: 0; }
+  [dir="rtl"] .note, [dir="rtl"] .download .test, [dir="rtl"] .download .next {
+    border-left: none; border-right: 4px solid #b50026; }
+  /* /languages */
 </style>
 </head>
 <body>
@@ -190,7 +224,10 @@
 <header class="header">
   <nav class="nav">
     <a href="/" class="logo-text">TIE<span class="accent">-</span>GAMES</a>
-    <a href="/" class="back-link">&larr; Back</a>
+    <!-- languages -->
+    <details class="languages"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><span>English</span></summary><ul><li><a href="/panorun/" hreflang="en" lang="en" data-language="en" class="here">English</a></li><li><a href="/panorun/es/" hreflang="es" lang="es" data-language="es">Español</a></li><li><a href="/panorun/de/" hreflang="de" lang="de" data-language="de">Deutsch</a></li><li><a href="/panorun/fr/" hreflang="fr" lang="fr" data-language="fr">Français</a></li><li><a href="/panorun/pt-br/" hreflang="pt-BR" lang="pt-BR" data-language="pt-br">Português (Brasil)</a></li><li><a href="/panorun/ru/" hreflang="ru" lang="ru" data-language="ru">Русский</a></li><li><a href="/panorun/ja/" hreflang="ja" lang="ja" data-language="ja">日本語</a></li><li><a href="/panorun/ko/" hreflang="ko" lang="ko" data-language="ko">한국어</a></li><li><a href="/panorun/zh/" hreflang="zh-Hans" lang="zh-Hans" data-language="zh">简体中文</a></li><li><a href="/panorun/hi/" hreflang="hi" lang="hi" data-language="hi">हिन्दी</a></li><li><a href="/panorun/id/" hreflang="id" lang="id" data-language="id">Bahasa Indonesia</a></li><li><a href="/panorun/ar/" hreflang="ar" lang="ar" data-language="ar">العربية</a></li></ul></details>
+    <!-- /languages -->
+<a href="/" class="back-link">&larr; Back</a>
   </nav>
 </header>
 
@@ -320,6 +357,18 @@
 // releases: Cam2You's come often. Without one among them, or without GitHub's
 // API, the buttons above stay as each release writes them.
 (function () {
+  // The words the script writes, in the page's language: each language's
+  // page has its own (.github/scripts/panorun-languages.py writes them).
+  var WORDS = {
+    windows: 'Download Panorun {version} for Windows',
+    android: 'Download Panorun {version} for Android',
+    small: 'downloads Panorun as it installs it',
+    full: 'Or the <a href="{url}">full installer</a> ({size}), with everything in it: it installs without a connection.',
+    locale: 'en-GB'
+  };
+  function say(words, values) {
+    return words.replace(/{(\w+)}/g, function (all, name) { return values[name]; });
+  }
   var api = 'https://api.github.com/repos/TIE-Channel/tie-games-com/releases?per_page=100';
   function mb(bytes) { return Math.max(1, Math.round(bytes / 1048576)) + ' MB'; }
   function esc(text) { var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
@@ -358,7 +407,7 @@
       function asset(release, re) { return release.assets.filter(function (a) { return re.test(a.name); })[0]; }
       function version(release) { return release.tag_name.replace(/^panorun-v/, ''); }
       function date(release) {
-        return new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        return new Date(release.published_at).toLocaleDateString(WORDS.locale, { day: 'numeric', month: 'long', year: 'numeric' });
       }
 
       var windows = document.getElementById('download-windows');
@@ -370,11 +419,12 @@
         // connection, under it.
         var main = web || full;
         if (main) {
-          var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Panorun ' + esc(version(release)) + ' for Windows</a></p>' +
+          var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">' +
+            say(WORDS.windows, { version: esc(version(release)) }) + '</a></p>' +
             '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
           if (full && web) {
-            html += ' &middot; downloads Panorun as it installs it<br>Or the <a href="' + esc(full.browser_download_url) + '">full installer</a> (' + mb(full.size) +
-              '), with everything in it: it installs without a connection.';
+            html += ' &middot; ' + WORDS.small + '<br>' +
+              say(WORDS.full, { url: esc(full.browser_download_url), size: mb(full.size) });
           }
           windows.innerHTML = html + '</p>';
         }
@@ -386,7 +436,8 @@
       var withApk = panorun.filter(function (r) { return asset(r, apkRe); })[0];
       if (withApk) {
         var apk = asset(withApk, apkRe);
-        android.innerHTML = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">Download Panorun ' + esc(version(withApk)) + ' for Android</a></p>' +
+        android.innerHTML = '<p><a class="button" href="' + esc(apk.browser_download_url) + '">' +
+          say(WORDS.android, { version: esc(version(withApk)) }) + '</a></p>' +
           '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk)) + '</p>';
       }
     })
@@ -394,5 +445,28 @@
 })();
 </script>
 
+<!-- language chooser -->
+<script>
+// The visitor's language (.github/scripts/panorun-languages.py): a language
+// chosen in the menu is kept; else, the first time, the browser's.
+(function () {
+  var pages = { es: 'es', de: 'de', fr: 'fr', pt: 'pt-br', ru: 'ru', ja: 'ja', ko: 'ko', zh: 'zh', hi: 'hi', id: 'id', 'in': 'id', ar: 'ar' };
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest && e.target.closest('[data-language]');
+    if (link) { try { localStorage.setItem('panorun-language', link.getAttribute('data-language')); } catch (err) {} }
+  });
+  if (document.documentElement.lang !== 'en') return;
+  var chosen = null;
+  try { chosen = localStorage.getItem('panorun-language'); } catch (err) {}
+  if (chosen === null) {
+    var tag = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+    chosen = pages[tag.split('-')[0]] || null;
+  }
+  if (chosen && chosen !== 'en' && /\/panorun\/?$/.test(location.pathname)) {
+    location.replace('/panorun/' + chosen + '/' + location.hash);
+  }
+})();
+</script>
+<!-- /language chooser -->
 </body>
 </html>
