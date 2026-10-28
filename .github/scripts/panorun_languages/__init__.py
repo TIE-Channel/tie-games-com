@@ -123,6 +123,15 @@ KEYS = ['Panorun - the whole level in view | TIE-Games',
  'Get it on']
 
 
+#: The Mac and Linux sections' words (2026-10-28), each language's after its BLOCKS.
+MAC_LINUX_KEYS = ['MACOS 11 OR NEWER, APPLE SILICON (M1 AND NEWER)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Mac</a>',
+    'Open the disk image and drag <em>Panorun</em> onto <em>Applications</em>.', "Panorun isn't notarized by Apple yet: the first time, macOS says it cannot check it. Open <em>System Settings</em> &rarr; <em>Privacy &amp; Security</em>, scroll down and click <em>Open Anyway</em> beside Panorun.", 'Your games and recordings are kept in <em>Documents/Panorun</em>.',
+    'LINUX, 64-BIT (UBUNTU 22.04 OR NEWER AND THE LIKE)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Linux</a>',
+    'One file, an AppImage: allow it to run as a program (its Properties, or <code>chmod +x</code>) and open it.']
+
+
 def blocks(said):
     if len(said) != len(KEYS):
         raise SystemExit(f"{len(said)} texts for {len(KEYS)}")

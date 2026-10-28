@@ -1,5 +1,5 @@
 """Arabic: the page is written right to left (dir="rtl")."""
-from . import blocks
+from . import MAC_LINUX_KEYS, blocks
 
 MONTHS = ("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر",
           "نوفمبر", "ديسمبر")
@@ -14,6 +14,8 @@ WORDS = {
     "android": "تنزيل Panorun {version} لنظام Android",
     "small": "ينزّل Panorun أثناء التثبيت",
     "full": 'أو <a href="{url}">المثبّت الكامل</a> ({size})، وفيه كل شيء: يثبّت دون اتصال.',
+    "mac": 'تنزيل Panorun {version} لنظام Mac',
+    "linux": 'تنزيل Panorun {version} لنظام Linux',
     "locale": "ar-u-nu-latn",
 }
 
@@ -76,3 +78,15 @@ BLOCKS = blocks([
     "احصل على Panorun من Google Play",
     "احصل عليه من",
 ])
+
+#: Mac and Linux (2026-10-28).
+BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
+    'MACOS 11 أو أحدث، شرائح Apple (M1 وما بعدها)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">تنزيل Panorun لنظام Mac</a>',
+    'افتح صورة القرص واسحب <em>Panorun</em> إلى <em>التطبيقات</em>.',
+    'لم يُوثَّق Panorun من Apple بعد: في المرة الأولى يقول macOS إنه لا يستطيع التحقق منه. افتح <em>إعدادات النظام</em> &larr; <em>الخصوصية والأمن</em>، ومرّر إلى الأسفل، وانقر <em>الفتح على أي حال</em> بجانب Panorun.',
+    'تُحفظ ألعابك وتسجيلاتك في <em>Documents/Panorun</em>.',
+    'LINUX، 64 بت (UBUNTU 22.04 أو أحدث وما يشبهه)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">تنزيل Panorun لنظام Linux</a>',
+    'ملف واحد، AppImage: اسمح بتشغيله كبرنامج (من خصائصه، أو بالأمر <code>chmod +x</code>) ثم افتحه.',
+])))

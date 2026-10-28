@@ -1,5 +1,5 @@
 """German."""
-from . import blocks
+from . import MAC_LINUX_KEYS, blocks
 
 MONTHS = ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September",
           "Oktober", "November", "Dezember")
@@ -14,6 +14,8 @@ WORDS = {
     "android": "Panorun {version} für Android herunterladen",
     "small": "lädt Panorun beim Installieren herunter",
     "full": 'Oder das <a href="{url}">vollständige Installationsprogramm</a> ({size}) mit allem darin: es installiert ohne Verbindung.',
+    "mac": 'Panorun {version} für Mac herunterladen',
+    "linux": 'Panorun {version} für Linux herunterladen',
     "locale": "de-DE",
 }
 
@@ -76,3 +78,15 @@ BLOCKS = blocks([
     "Panorun bei Google Play holen",
     "Jetzt bei",
 ])
+
+#: Mac and Linux (2026-10-28).
+BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
+    'MACOS 11 ODER NEUER, APPLE SILICON (M1 UND NEUER)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Panorun für Mac herunterladen</a>',
+    'Öffne das Disk-Image und ziehe <em>Panorun</em> auf <em>Programme</em>.',
+    'Panorun ist noch nicht von Apple beglaubigt: Beim ersten Mal sagt macOS, dass es Panorun nicht prüfen kann. Öffne <em>Systemeinstellungen</em> &rarr; <em>Datenschutz &amp; Sicherheit</em>, scrolle nach unten und klicke neben Panorun auf <em>Dennoch öffnen</em>.',
+    'Deine Spiele und Aufnahmen liegen in <em>Dokumente/Panorun</em>.',
+    'LINUX, 64 BIT (UBUNTU 22.04 ODER NEUER UND ÄHNLICHE)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Panorun für Linux herunterladen</a>',
+    'Eine Datei, ein AppImage: erlaube, sie als Programm auszuführen (in ihren Eigenschaften oder mit <code>chmod +x</code>), und öffne sie.',
+])))

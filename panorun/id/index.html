@@ -310,6 +310,27 @@
         <li>Versi baru dipasang dengan cara yang sama, menimpa yang Anda punya: game Anda tetap ada.</li>
       </ul>
     </div>
+    <div class="system" id="mac">
+      <p class="platform">MACOS 11 ATAU LEBIH BARU, APPLE SILICON (M1 DAN LEBIH BARU)</p>
+      <div id="download-mac">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Unduh Panorun untuk Mac</a></p>
+      </div>
+      <ul>
+        <li>Buka disk image lalu seret <em>Panorun</em> ke <em>Applications</em>.</li>
+        <li>Panorun belum dinotarisasi oleh Apple: pertama kali, macOS mengatakan tidak dapat memeriksanya. Buka <em>Pengaturan Sistem</em> &rarr; <em>Privasi &amp; Keamanan</em>, gulir ke bawah dan klik <em>Tetap Buka</em> di samping Panorun.</li>
+        <li>Game dan rekaman Anda disimpan di <em>Documents/Panorun</em>.</li>
+      </ul>
+    </div>
+    <div class="system" id="linux">
+      <p class="platform">LINUX, 64-BIT (UBUNTU 22.04 ATAU LEBIH BARU DAN SEJENISNYA)</p>
+      <div id="download-linux">
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Unduh Panorun untuk Linux</a></p>
+      </div>
+      <ul>
+        <li>Satu file, sebuah AppImage: izinkan dijalankan sebagai program (di Properties-nya, atau dengan <code>chmod +x</code>) lalu buka.</li>
+        <li>Game dan rekaman Anda disimpan di <em>Documents/Panorun</em>.</li>
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -362,6 +383,8 @@
   var WORDS = {
     windows: 'Unduh Panorun {version} untuk Windows',
     android: 'Unduh Panorun {version} untuk Android',
+    mac: 'Unduh Panorun {version} untuk Mac',
+    linux: 'Unduh Panorun {version} untuk Linux',
     small: 'mengunduh Panorun sambil memasangnya',
     full: 'Atau <a href="{url}">penginstal lengkap</a> ({size}), berisi semuanya: memasang tanpa koneksi.',
     locale: 'id-ID'
@@ -376,6 +399,11 @@
   // The visitor's own system first.
   var ua = navigator.userAgent;
   var systems = document.getElementById('systems');
+  if (/Macintosh|Mac OS X/i.test(ua) && !/iPhone|iPad/i.test(ua)) {
+    systems.insertBefore(document.getElementById('mac'), systems.firstElementChild);
+  } else if (/Linux/i.test(ua) && !/Android/i.test(ua)) {
+    systems.insertBefore(document.getElementById('linux'), systems.firstElementChild);
+  }
   if (/Android/i.test(ua)) {
     systems.insertBefore(document.getElementById('android'), systems.firstElementChild);
     // Opened inside another app (its WebView: "; wv)" in the user agent):
@@ -440,6 +468,18 @@
           say(WORDS.android, { version: esc(version(withApk)) }) + '</a></p>' +
           '<p class="file">' + esc(apk.name) + ' &middot; ' + mb(apk.size) + ' &middot; ' + esc(date(withApk)) + '</p>';
       }
+
+      // A Mac's disk image and Linux's AppImage: the newest release with one.
+      [['download-mac', /^Panorun-[\d.]+-macOS\.dmg$/, WORDS.mac],
+       ['download-linux', /^Panorun-[\d.]+-x86_64\.AppImage$/, WORDS.linux]].forEach(function (system) {
+        var box = document.getElementById(system[0]);
+        var withFile = panorun.filter(function (r) { return asset(r, system[1]); })[0];
+        if (!box || !withFile) return;
+        var file = asset(withFile, system[1]);
+        box.innerHTML = '<p><a class="button" href="' + esc(file.browser_download_url) + '">' +
+          say(system[2], { version: esc(version(withFile)) }) + '</a></p>' +
+          '<p class="file">' + esc(file.name) + ' &middot; ' + mb(file.size) + ' &middot; ' + esc(date(withFile)) + '</p>';
+      });
     })
     .catch(function () { /* the buttons to the releases page stay */ });
 })();

@@ -1,5 +1,5 @@
 """Hindi."""
-from . import blocks
+from . import MAC_LINUX_KEYS, blocks
 
 MONTHS = ("जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्तूबर",
           "नवंबर", "दिसंबर")
@@ -14,6 +14,8 @@ WORDS = {
     "android": "Android के लिए Panorun {version} डाउनलोड करें",
     "small": "इंस्टॉल करते समय Panorun डाउनलोड करता है",
     "full": 'या <a href="{url}">पूरा इंस्टॉलर</a> ({size}), जिसमें सब कुछ है: यह बिना कनेक्शन के इंस्टॉल होता है।',
+    "mac": 'Mac के लिए Panorun {version} डाउनलोड करें',
+    "linux": 'Linux के लिए Panorun {version} डाउनलोड करें',
     "locale": "hi-IN",
 }
 
@@ -76,3 +78,15 @@ BLOCKS = blocks([
     "Google Play पर Panorun पाएँ",
     "इसे पाएँ",
 ])
+
+#: Mac and Linux (2026-10-28).
+BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
+    'MACOS 11 या नया, APPLE SILICON (M1 और नए)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Mac के लिए Panorun डाउनलोड करें</a>',
+    'डिस्क इमेज खोलें और <em>Panorun</em> को <em>Applications</em> पर खींचें।',
+    'Panorun अभी Apple से नोटराइज़ नहीं है: पहली बार macOS कहता है कि वह इसकी जाँच नहीं कर सकता। <em>System Settings</em> &rarr; <em>Privacy &amp; Security</em> खोलें, नीचे स्क्रॉल करें और Panorun के पास <em>Open Anyway</em> पर क्लिक करें।',
+    'आपके गेम और रिकॉर्डिंग <em>Documents/Panorun</em> में रखे जाते हैं।',
+    'LINUX, 64-बिट (UBUNTU 22.04 या नया और इसी तरह के)',
+    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Linux के लिए Panorun डाउनलोड करें</a>',
+    'एक ही फ़ाइल, एक AppImage: इसे प्रोग्राम की तरह चलने दें (इसकी Properties में, या <code>chmod +x</code> से) और खोलें।',
+])))

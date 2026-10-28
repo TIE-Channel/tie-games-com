@@ -164,7 +164,7 @@ def translate(text, folder, tag, module):
     # The version's own lines: the buttons, the file lines and their dates.
     def button(match):
         return ">" + words.WORDS[match.group(2).lower()].replace("{version}", match.group(1)) + "<"
-    out = re.sub(r">Download Panorun ([\d.]+) for (Windows|Android)<", button, out)
+    out = re.sub(r">Download Panorun ([\d.]+) for (Windows|Android|Mac|Linux)<", button, out)
 
     def day(match):
         return words.date(int(match.group(1)), MONTHS.index(match.group(2)) + 1, int(match.group(3)))
@@ -178,7 +178,8 @@ def translate(text, folder, tag, module):
                  r'it installs without a connection\.', full, out)
 
     # The script's words.
-    script_words = ("    windows: '{windows}',\n    android: '{android}',\n    small: '{small}',\n"
+    script_words = ("    windows: '{windows}',\n    android: '{android}',\n    mac: '{mac}',\n"
+                    "    linux: '{linux}',\n    small: '{small}',\n"
                     "    full: '{full}',\n    locale: '{locale}'\n").format(
         **{k: v.replace("'", "\\'") for k, v in words.WORDS.items()})
     out = re.sub(r"(  var WORDS = \{\n)(.*?)(  \};)", lambda m: m.group(1) + script_words + m.group(3),
