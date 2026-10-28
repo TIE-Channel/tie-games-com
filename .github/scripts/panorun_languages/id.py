@@ -1,5 +1,5 @@
 """Indonesian."""
-from . import MAC_LINUX_KEYS, blocks
+from . import MAC_LINUX_KEYS, VIDEO_KEYS, blocks
 
 MONTHS = ("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September",
           "Oktober", "November", "Desember")
@@ -82,11 +82,15 @@ BLOCKS = blocks([
 #: Mac and Linux (2026-10-28).
 BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
     'MACOS 11 ATAU LEBIH BARU, APPLE SILICON (M1 DAN LEBIH BARU)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Unduh Panorun untuk Mac</a>',
     'Buka disk image lalu seret <em>Panorun</em> ke <em>Applications</em>.',
     'Panorun belum dinotarisasi oleh Apple: pertama kali, macOS mengatakan tidak dapat memeriksanya. Buka <em>Pengaturan Sistem</em> &rarr; <em>Privasi &amp; Keamanan</em>, gulir ke bawah dan klik <em>Tetap Buka</em> di samping Panorun.',
     'Game dan rekaman Anda disimpan di <em>Documents/Panorun</em>.',
     'LINUX, 64-BIT (UBUNTU 22.04 ATAU LEBIH BARU DAN SEJENISNYA)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Unduh Panorun untuk Linux</a>',
     'Satu file, sebuah AppImage: izinkan dijalankan sebagai program (di Properties-nya, atau dengan <code>chmod +x</code>) lalu buka.',
+])))
+
+BLOCKS.update(dict(zip(VIDEO_KEYS, [
+    'Putar video Panorun (YouTube)',
+    'Dua game kecil Panorun, dimainkan bersama di satu ruang',
+    'Panorun dalam 40 detik. Setelah diklik, video diputar dari YouTube.',
 ])))

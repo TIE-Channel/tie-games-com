@@ -126,11 +126,13 @@ KEYS = ['Panorun - the whole level in view | TIE-Games',
 
 #: The Mac and Linux sections' words (2026-10-28), each language's after its BLOCKS.
 MAC_LINUX_KEYS = ['MACOS 11 OR NEWER, APPLE SILICON (M1 AND NEWER)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Mac</a>',
     'Open the disk image and drag <em>Panorun</em> onto <em>Applications</em>.', "Panorun isn't notarized by Apple yet: the first time, macOS says it cannot check it. Open <em>System Settings</em> &rarr; <em>Privacy &amp; Security</em>, scroll down and click <em>Open Anyway</em> beside Panorun.", 'Your games and recordings are kept in <em>Documents/Panorun</em>.',
     'LINUX, 64-BIT (UBUNTU 22.04 OR NEWER AND THE LIKE)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Linux</a>',
     'One file, an AppImage: allow it to run as a program (its Properties, or <code>chmod +x</code>) and open it.']
+
+
+#: The video's words (2026-10-28), each language's after its Mac and Linux words.
+VIDEO_KEYS = ["Play Panorun's video (YouTube)", "Panorun's two little games, played together in a room", 'Panorun in 40 seconds. Clicked, the video plays from YouTube.']
 
 
 def blocks(said):

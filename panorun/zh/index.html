@@ -193,6 +193,16 @@
   .play-badge-line2 { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
   .download .or { font-size: 15px; margin: 10px 0 14px; }
 
+  .video { margin: 24px 0 8px; }
+  .video a { display: block; position: relative; aspect-ratio: 16 / 9; border: 2px solid #1a1a1a; background: #000; }
+  .video img, .video iframe { display: block; width: 100%; height: 100%; border: 0; object-fit: cover; }
+  .video .play { position: absolute; left: 50%; top: 50%; width: 72px; height: 50px; margin: -25px 0 0 -36px;
+    background: #b50026; border-radius: 12px; }
+  .video .play::after { content: ''; position: absolute; left: 29px; top: 15px;
+    border-style: solid; border-width: 10px 0 10px 18px; border-color: transparent transparent transparent #fff; }
+  .video a:hover .play { background: #1a1a1a; }
+  .video figcaption { font-size: 14px; color: #666; margin-top: 8px; }
+
   @media (max-width: 520px) {
     .hero { flex-direction: column; align-items: flex-start; }
     .download { padding: 16px; }
@@ -243,6 +253,14 @@
 
 <p>Panorun 是一款经典 8 位游戏机游戏的模拟器，能让整个关卡尽收眼底：你滚动经过的一切都会留在游戏周围的屏幕上。一起联机游戏，你的朋友会在你自己的游戏里与你并肩奔跑。Panorun 由德国德累斯顿的独立工作室 TIE-Games 制作。</p>
 <p>有安卓手机吗？<a href="#test">帮忙在 Google Play 上测试 Panorun</a>。</p>
+
+<figure class="video">
+  <a href="https://www.youtube.com/watch?v=Iv3mdQrr6RA" id="video" data-video="Iv3mdQrr6RA" aria-label="播放 Panorun 的视频（YouTube）">
+    <img src="/panorun/video.jpg" alt="Panorun 自带的两款小游戏，在一个房间里一起玩" width="1280" height="720">
+    <span class="play" aria-hidden="true"></span>
+  </a>
+  <figcaption>40 秒看懂 Panorun。点击后，视频从 YouTube 播放。</figcaption>
+</figure>
 
 <section class="download" id="download">
   <h2>下载</h2>
@@ -313,7 +331,7 @@
     <div class="system" id="mac">
       <p class="platform">MACOS 11 或更高版本，APPLE 芯片（M1 及更新）</p>
       <div id="download-mac">
-        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">下载 Panorun（Mac）</a></p>
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Mac</a></p>
       </div>
       <ul>
         <li>打开磁盘映像，把<em>Panorun</em>拖到<em>应用程序</em>。</li>
@@ -324,7 +342,7 @@
     <div class="system" id="linux">
       <p class="platform">LINUX，64 位（UBUNTU 22.04 或更高版本等）</p>
       <div id="download-linux">
-        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">下载 Panorun（Linux）</a></p>
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Download Panorun for Linux</a></p>
       </div>
       <ul>
         <li>一个文件，AppImage：允许它作为程序运行（在其属性中，或用<code>chmod +x</code>），然后打开它。</li>
@@ -482,6 +500,27 @@
       });
     })
     .catch(function () { /* the buttons to the releases page stay */ });
+})();
+</script>
+
+<script>
+// The video: a picture until it is clicked, then YouTube's player in its
+// place (youtube-nocookie.com) - nothing from YouTube before that.
+(function () {
+  var link = document.getElementById('video');
+  if (!link) return;
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    var frame = document.createElement('iframe');
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + link.getAttribute('data-video') + '?autoplay=1&rel=0';
+    frame.title = link.getAttribute('aria-label');
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    frame.allowFullscreen = true;
+    var box = document.createElement('div');
+    box.style.aspectRatio = '16 / 9';
+    box.appendChild(frame);
+    link.parentNode.replaceChild(box, link);
+  });
 })();
 </script>
 

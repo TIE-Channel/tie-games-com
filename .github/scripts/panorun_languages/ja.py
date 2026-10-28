@@ -1,5 +1,5 @@
 """Japanese."""
-from . import MAC_LINUX_KEYS, blocks
+from . import MAC_LINUX_KEYS, VIDEO_KEYS, blocks
 
 
 def date(day, month, year):
@@ -79,11 +79,15 @@ BLOCKS = blocks([
 #: Mac and Linux (2026-10-28).
 BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
     'MACOS 11 以降、APPLE シリコン（M1 以降）',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Panorun をダウンロード（Mac）</a>',
     'ディスクイメージを開き、<em>Panorun</em>を<em>アプリケーション</em>にドラッグします。',
     'PanorunはまだAppleの公証を受けていません。初回はmacOSが確認できないと表示します。<em>システム設定</em> &rarr; <em>プライバシーとセキュリティ</em>を開き、下にスクロールしてPanorunの横の<em>このまま開く</em>をクリックしてください。',
     'ゲームと録画は<em>書類/Panorun</em>に保存されます。',
     'LINUX（64ビット、UBUNTU 22.04 以降など）',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Panorun をダウンロード（Linux）</a>',
     'AppImageの1ファイルです。プログラムとして実行できるようにして（プロパティ、または<code>chmod +x</code>）開いてください。',
+])))
+
+BLOCKS.update(dict(zip(VIDEO_KEYS, [
+    'Panorun の動画を再生（YouTube）',
+    'Panorun の 2 つの小さなゲームを、ルームで一緒に遊ぶ',
+    '40 秒でわかる Panorun。クリックすると YouTube から再生されます。',
 ])))

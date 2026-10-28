@@ -1,5 +1,5 @@
 """Simplified Chinese."""
-from . import MAC_LINUX_KEYS, blocks
+from . import MAC_LINUX_KEYS, VIDEO_KEYS, blocks
 
 
 def date(day, month, year):
@@ -79,11 +79,15 @@ BLOCKS = blocks([
 #: Mac and Linux (2026-10-28).
 BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
     'MACOS 11 或更高版本，APPLE 芯片（M1 及更新）',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">下载 Panorun（Mac）</a>',
     '打开磁盘映像，把<em>Panorun</em>拖到<em>应用程序</em>。',
     'Panorun 还没有经过 Apple 公证：第一次打开时，macOS 会说无法检查它。打开<em>系统设置</em> &rarr; <em>隐私与安全性</em>，向下滚动，点按 Panorun 旁边的<em>仍要打开</em>。',
     '你的游戏和录像保存在<em>文稿/Panorun</em>中。',
     'LINUX，64 位（UBUNTU 22.04 或更高版本等）',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">下载 Panorun（Linux）</a>',
     '一个文件，AppImage：允许它作为程序运行（在其属性中，或用<code>chmod +x</code>），然后打开它。',
+])))
+
+BLOCKS.update(dict(zip(VIDEO_KEYS, [
+    '播放 Panorun 的视频（YouTube）',
+    'Panorun 自带的两款小游戏，在一个房间里一起玩',
+    '40 秒看懂 Panorun。点击后，视频从 YouTube 播放。',
 ])))

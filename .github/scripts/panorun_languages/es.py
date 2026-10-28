@@ -1,5 +1,5 @@
 """Spanish."""
-from . import MAC_LINUX_KEYS, blocks
+from . import MAC_LINUX_KEYS, VIDEO_KEYS, blocks
 
 MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
           "octubre", "noviembre", "diciembre")
@@ -82,11 +82,15 @@ BLOCKS = blocks([
 #: Mac and Linux (2026-10-28).
 BLOCKS.update(dict(zip(MAC_LINUX_KEYS, [
     'MACOS 11 O POSTERIOR, APPLE SILICON (M1 Y POSTERIORES)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Descargar Panorun para Mac</a>',
     'Abre la imagen de disco y arrastra <em>Panorun</em> a <em>Aplicaciones</em>.',
     'Panorun aún no está notarizado por Apple: la primera vez, macOS dice que no puede comprobarlo. Abre <em>Ajustes del Sistema</em> &rarr; <em>Privacidad y seguridad</em>, desplázate hacia abajo y haz clic en <em>Abrir igualmente</em> junto a Panorun.',
     'Tus juegos y grabaciones se guardan en <em>Documentos/Panorun</em>.',
     'LINUX, 64 BITS (UBUNTU 22.04 O POSTERIOR Y SIMILARES)',
-    '<a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases">Descargar Panorun para Linux</a>',
     'Un solo archivo, un AppImage: permite que se ejecute como programa (en sus Propiedades, o con <code>chmod +x</code>) y ábrelo.',
+])))
+
+BLOCKS.update(dict(zip(VIDEO_KEYS, [
+    'Reproducir el vídeo de Panorun (YouTube)',
+    'Los dos pequeños juegos de Panorun, jugados juntos en una sala',
+    'Panorun en 40 segundos. Al hacer clic, el vídeo se reproduce desde YouTube.',
 ])))
