@@ -1,0 +1,208 @@
+# Builds Panorun for a Mac and for Linux (the player's request, 2026-10-28) and
+# puts both on Panorun's release panorun-v<version>, beside Windows' installers
+# (panorun-release.yml) and Android's APK (panorun-android.yml):
+#   Panorun-<version>-macOS.dmg       Panorun.app for Apple silicon Macs, signed
+#                                     ad hoc - no Developer ID yet, so macOS asks
+#                                     the first time: Open Anyway in Privacy &
+#                                     Security (tie-games.com/panorun says how)
+#   Panorun-<version>-x86_64.AppImage one file for 64-bit Linux, Ubuntu 22.04
+#                                     and newer and the like
+# Like the others, here in the site's public repository; the sources are only
+# checked out on the runners (SOURCE_TOKEN). Before anything is put on the
+# release the tests run and each is started with its self-check: its window
+# opens and a tiny cartridge runs in it.
+#
+# Run it by hand: Actions -> Panorun Mac and Linux -> Run workflow - with
+# release "none" only to build and try (the files are the run's artifacts).
+name: Panorun Mac and Linux
+
+on:
+  workflow_dispatch:
+    inputs:
+      panorun_ref:
+        description: Panorun (TIE-Channel/emulator) branch, tag or commit
+        default: main
+      release:
+        description: Put them on the release panorun-v<version>, or none (only build and try)
+        type: choice
+        options: [publish, none]
+        default: publish
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      panorun: ${{ steps.version.outputs.panorun }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/emulator
+          ref: ${{ inputs.panorun_ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: panorun
+          persist-credentials: false
+      - name: Version
+        id: version
+        run: |
+          {
+            echo "version=$(grep -oP '^__version__\s*=\s*"\K[\d.]+' panorun/src/panorun/__init__.py)"
+            echo "panorun=$(git -C panorun rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+  macos:
+    needs: prepare
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/emulator
+          ref: ${{ needs.prepare.outputs.panorun }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: panorun
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tools
+        run: python -m pip install --disable-pip-version-check numpy pygame nuitka ordered-set zstandard imageio pillow pytest
+
+      # No tracebacks: they would quote the private sources in this public log.
+      - name: Tests
+        working-directory: panorun
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python -m pytest tests -q -p no:cacheprovider --tb=no
+
+      - name: Panorun.app
+        working-directory: panorun
+        run: |
+          python build.py --folder
+          test -x dist/Panorun.app/Contents/MacOS/panorun
+          # Signed ad hoc: Apple silicon runs nothing unsigned.
+          codesign --force --deep --sign - dist/Panorun.app
+          codesign --verify --deep dist/Panorun.app
+
+      - name: Start it
+        working-directory: panorun
+        run: |
+          answer="$RUNNER_TEMP/self-check.json"
+          SDL_AUDIODRIVER=dummy dist/Panorun.app/Contents/MacOS/panorun --self-check "$answer" &
+          for _ in $(seq 180); do [ -s "$answer" ] && break; sleep 1; done
+          sleep 2
+          cat "$answer"
+          python -c "import json,sys; r=json.load(open(sys.argv[1])); print('::notice title=macOS self-check::Panorun %s: %s frames at %s a second, video %s' % (r.get('version'), r.get('frames'), r.get('fps'), r.get('video'))); sys.exit(0 if r.get('ok') else 1)" "$answer"
+
+      - name: Disk image
+        working-directory: panorun
+        run: |
+          mkdir -p dmg
+          cp -R dist/Panorun.app dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "Panorun" -srcfolder dmg -ov -format UDZO "Panorun-$VERSION-macOS.dmg"
+          ls -l "Panorun-$VERSION-macOS.dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panorun-macos
+          path: panorun/Panorun-*-macOS.dmg
+          if-no-files-found: error
+
+  linux:
+    needs: prepare
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: TIE-Channel/emulator
+          ref: ${{ needs.prepare.outputs.panorun }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: panorun
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q patchelf xvfb
+          python -m pip install --disable-pip-version-check numpy pygame nuitka ordered-set zstandard pillow pytest
+
+      - name: Tests
+        working-directory: panorun
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python -m pytest tests -q -p no:cacheprovider --tb=no
+
+      - name: Panorun
+        working-directory: panorun
+        run: |
+          python build.py --folder
+          test -x dist/panorun/panorun
+
+      - name: AppImage
+        working-directory: panorun
+        run: |
+          app=AppDir
+          mkdir -p "$app"
+          cp -R dist/panorun "$app/panorun"
+          cp assets/branding/store/play_icon.png "$app/panorun.png"
+          printf '%s\n' '[Desktop Entry]' 'Type=Application' 'Name=Panorun' 'Exec=panorun' 'Icon=panorun' \
+            'Categories=Game;Emulator;' 'Comment=The whole level in view, your friends running beside you' \
+            > "$app/panorun.desktop"
+          printf '%s\n' '#!/bin/sh' 'here="$(dirname "$(readlink -f "$0")")"' 'exec "$here/panorun/panorun" "$@"' \
+            > "$app/AppRun"
+          chmod +x "$app/AppRun"
+          curl -sSLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool --appimage-extract-and-run "$app" "Panorun-$VERSION-x86_64.AppImage"
+          ls -l "Panorun-$VERSION-x86_64.AppImage"
+
+      - name: Start it
+        working-directory: panorun
+        run: |
+          answer="$RUNNER_TEMP/self-check.json"
+          SDL_AUDIODRIVER=dummy xvfb-run -a ./Panorun-$VERSION-x86_64.AppImage --appimage-extract-and-run --self-check "$answer" &
+          for _ in $(seq 180); do [ -s "$answer" ] && break; sleep 1; done
+          sleep 2
+          cat "$answer"
+          python -c "import json,sys; r=json.load(open(sys.argv[1])); print('::notice title=Linux self-check::Panorun %s: %s frames at %s a second, video %s' % (r.get('version'), r.get('frames'), r.get('fps'), r.get('video'))); sys.exit(0 if r.get('ok') else 1)" "$answer"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panorun-linux
+          path: panorun/Panorun-*-x86_64.AppImage
+          if-no-files-found: error
+
+  release:
+    needs: [prepare, macos, linux]
+    if: ${{ inputs.release == 'publish' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: panorun-v${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: panorun-*
+          merge-multiple: true
+          path: dist
+      - name: On Panorun's release
+        working-directory: dist
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null
+          gh release upload "$TAG" Panorun-* --repo "$GITHUB_REPOSITORY" --clobber
+          for file in Panorun-*; do
+            echo "::notice title=$file::$(sha256sum "$file" | cut -d' ' -f1)"
+          done
