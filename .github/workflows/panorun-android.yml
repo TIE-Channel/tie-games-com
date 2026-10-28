@@ -146,4 +146,5 @@ jobs:
           echo "::notice title=APK::Panorun-$VERSION.apk $(sha256sum "signed/Panorun-$VERSION.apk" | cut -d' ' -f1) on $TAG"
 
       - name: The draft gone
-        run: gh release delete "$STAGING" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+        # A draft has no tag of its own: only the release goes.
+        run: gh release delete "$STAGING" --repo "$GITHUB_REPOSITORY" --yes
