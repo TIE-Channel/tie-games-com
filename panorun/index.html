@@ -216,8 +216,8 @@
     <div class="system" id="windows">
       <p class="platform">WINDOWS 10 AND 11, 64-BIT</p>
       <div id="download-windows">
-        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Setup-0.1.18.exe">Download Panorun 0.1.18 for Windows</a></p>
-        <p class="file">Panorun-Setup-0.1.18.exe &middot; 27 MB &middot; 27 October 2026<br>Or the <a href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Web-Setup-0.1.18.exe">small installer</a> (2 MB), which downloads Panorun as it installs it.</p>
+        <p><a class="button" href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Web-Setup-0.1.18.exe">Download Panorun 0.1.18 for Windows</a></p>
+        <p class="file">Panorun-Web-Setup-0.1.18.exe &middot; 2 MB &middot; 27 October 2026 &middot; downloads Panorun as it installs it<br>Or the <a href="https://github.com/TIE-Channel/tie-games-com/releases/download/panorun-v0.1.18/Panorun-Setup-0.1.18.exe">full installer</a> (27 MB), with everything in it: it installs without a connection.</p>
       </div>
       <ul>
         <li>The installer asks where to install and whether to put a shortcut on the desktop. No administrator rights are needed.</li>
@@ -366,13 +366,15 @@
       if (release) {
         var full = asset(release, /^Panorun-Setup-[\d.]+\.exe$/);
         var web = asset(release, /^Panorun-Web-Setup-[\d.]+\.exe$/);
-        var main = full || web;
+        // The small installer first; the full one, for installing without a
+        // connection, under it.
+        var main = web || full;
         if (main) {
           var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Panorun ' + esc(version(release)) + ' for Windows</a></p>' +
             '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
           if (full && web) {
-            html += '<br>Or the <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
-              '), which downloads Panorun as it installs it.';
+            html += ' &middot; downloads Panorun as it installs it<br>Or the <a href="' + esc(full.browser_download_url) + '">full installer</a> (' + mb(full.size) +
+              '), with everything in it: it installs without a connection.';
           }
           windows.innerHTML = html + '</p>';
         }

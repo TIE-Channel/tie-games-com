@@ -403,13 +403,15 @@
       } else {
         var full = asset(release, /^Cam2You-Setup-[\d.]+\.exe$/);
         var web = asset(release, /^Cam2You-Web-Setup-[\d.]+\.exe$/);
-        var main = full || web;
+        // The small installer first: it downloads only what you choose to
+        // install. The full one, for installing without a connection, under it.
+        var main = web || full;
         if (main) {
           var html = '<p><a class="button" href="' + esc(main.browser_download_url) + '">Download Cam2You ' + esc(version(release)) + ' for Windows</a></p>' +
             '<p class="file">' + esc(main.name) + ' &middot; ' + mb(main.size) + ' &middot; ' + esc(date(release));
           if (full && web) {
-            html += '<br>Slow connection? The <a href="' + esc(web.browser_download_url) + '">small installer</a> (' + mb(web.size) +
-              ') downloads only what you choose to install.';
+            html += ' &middot; downloads only what you choose to install<br>Or the <a href="' + esc(full.browser_download_url) + '">full installer</a> (' + mb(full.size) +
+              '), with everything in it: it installs without a connection.';
           }
           windows.innerHTML = html + '</p>';
         }
