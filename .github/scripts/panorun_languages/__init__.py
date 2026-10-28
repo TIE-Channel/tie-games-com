@@ -87,7 +87,8 @@ KEYS = ['Panorun - the whole level in view | TIE-Games',
  'the web for <em>8-bit homebrew games</em>. Or use copies of games you own. Add them with <em>ADD '
  'GAMES</em>, or drop them onto the window; Panorun keeps them in <em>Documents\\Panorun</em>. On '
  "a phone, <em>ADD GAMES</em> and <em>CHOOSE FOLDER</em> open your phone's own file picker. Or "
- "<em>TRY THE DEMO</em>: a little game of Panorun's own.",
+ "<em>TRY THE DEMO</em>: two little games of Panorun's own, a brawl on the rooftops "
+ "at night and a run through green hills.",
  'Your privacy',
  'Panorun has no accounts, no analytics and no advertising. Your games, settings and recordings '
  'stay on your computer or phone. Panorun contacts only GitHub, to look for a newer version (on '
