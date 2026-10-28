@@ -85,7 +85,7 @@ jobs:
         working-directory: panorun
         run: |
           python build.py --folder
-          test -x dist/Panorun.app/Contents/MacOS/panorun
+          test -x dist/Panorun.app/Contents/MacOS/panorun.bin
           # Signed ad hoc: Apple silicon runs nothing unsigned.
           codesign --force --deep --sign - dist/Panorun.app
           codesign --verify --deep dist/Panorun.app
@@ -94,7 +94,7 @@ jobs:
         working-directory: panorun
         run: |
           answer="$RUNNER_TEMP/self-check.json"
-          SDL_AUDIODRIVER=dummy dist/Panorun.app/Contents/MacOS/panorun --self-check "$answer" &
+          SDL_AUDIODRIVER=dummy dist/Panorun.app/Contents/MacOS/panorun.bin --self-check "$answer" &
           for _ in $(seq 180); do [ -s "$answer" ] && break; sleep 1; done
           sleep 2
           cat "$answer"
@@ -149,7 +149,7 @@ jobs:
         working-directory: panorun
         run: |
           python build.py --folder
-          test -x dist/panorun/panorun
+          test -x dist/panorun/panorun.bin
 
       - name: AppImage
         working-directory: panorun
@@ -161,7 +161,7 @@ jobs:
           printf '%s\n' '[Desktop Entry]' 'Type=Application' 'Name=Panorun' 'Exec=panorun' 'Icon=panorun' \
             'Categories=Game;Emulator;' 'Comment=The whole level in view, your friends running beside you' \
             > "$app/panorun.desktop"
-          printf '%s\n' '#!/bin/sh' 'here="$(dirname "$(readlink -f "$0")")"' 'exec "$here/panorun/panorun" "$@"' \
+          printf '%s\n' '#!/bin/sh' 'here="$(dirname "$(readlink -f "$0")")"' 'exec "$here/panorun/panorun.bin" "$@"' \
             > "$app/AppRun"
           chmod +x "$app/AppRun"
           curl -sSLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
