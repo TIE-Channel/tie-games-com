@@ -1,0 +1,149 @@
+# Signs Panorun's Android app - Google Play's bundle and the APK for the
+# website - and sends the bundle on to Google Play, here on GitHub: nobody
+# types the key's password and nobody opens Play Console for a release (the
+# player's request, 2026-10-28). Windows' half of a release is
+# panorun-release.yml.
+#
+# The app is built where python-for-android is set up, unsigned: the
+# emulator's android/release.py builds it (android/build.sh --release and
+# --release-apk), puts both files on a draft release of this repository,
+# panorun-android-v<version> - seen only by those who can edit it - and runs
+# this, which:
+#  1. signs both with the key in PANORUN_ANDROID_SIGNING, once it has seen it
+#     is Panorun's (.github/scripts/android-sign.sh);
+#  2. sends the bundle to Google Play's track - "alpha" is Closed testing -
+#     Alpha - with What's new, and on for review (.github/scripts/play-upload.py);
+#  3. waits for Panorun's release panorun-v<version> - panorun-release.yml
+#     makes it, often still building Windows - and puts the APK on it as
+#     Panorun-<version>.apk, where tie-games.com/panorun's Android button finds
+#     it;
+#  4. deletes the draft the unsigned files came on.
+#
+# Run it from the emulator: py -3.11 android/release.py "What's new"; or here
+# by hand: Actions -> Panorun Android -> Run workflow, with the draft there.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   PANORUN_ANDROID_SIGNING   Panorun's Android key, as JSON: "keystore" (the
+#                             PKCS #12 file, base64) and "password" - put there
+#                             by the emulator's android/set-signing-secret.ps1.
+#                             Every version is signed with it: Android installs
+#                             no other over Panorun, and Google Play takes it as
+#                             Panorun's upload key.
+#   PLAY_SERVICE_ACCOUNT_JSON the JSON key of a Google Cloud service account
+#                             that Play Console lets release Panorun (Users and
+#                             permissions) - put there by the emulator's
+#                             android/set-play-secret.ps1.
+name: Panorun Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Panorun's version - its unsigned build on the draft release panorun-android-v<version>
+        required: true
+      notes:
+        description: What's new, for Google Play's testers - 500 characters at most
+        required: true
+      play:
+        description: Send the bundle to Google Play, and on for review
+        type: boolean
+        default: true
+      track:
+        description: Google Play's track ("alpha" is Closed testing - Alpha)
+        default: alpha
+      apk:
+        description: Put the APK on Panorun's release
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: panorun-android
+
+env:
+  PACKAGE: com.tiegames.panorun
+  # Panorun's key's certificate: what Panorun's APKs have been signed with
+  # since its first.
+  ANDROID_CERTIFICATE: 950306029355b99a31bfb2e695733fb1802690f2ac4576c6da60647ed724ccce
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      STAGING: panorun-android-v${{ inputs.version }}
+      TAG: panorun-v${{ inputs.version }}
+    steps:
+      - name: Secrets and What's new
+        env:
+          PANORUN_ANDROID_SIGNING: ${{ secrets.PANORUN_ANDROID_SIGNING }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY: ${{ inputs.play }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if [ -z "$PANORUN_ANDROID_SIGNING" ]; then
+            echo '::error::No PANORUN_ANDROID_SIGNING secret: see the top of .github/workflows/panorun-android.yml'; exit 1
+          fi
+          if [ "$PLAY" = true ] && [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo '::error::No PLAY_SERVICE_ACCOUNT_JSON secret: see the top of .github/workflows/panorun-android.yml'; exit 1
+          fi
+          if [ "${#NOTES}" -gt 500 ]; then
+            echo "::error::What's new is ${#NOTES} characters: Google Play takes 500"; exit 1
+          fi
+          printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.txt"
+
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          path: site
+
+      - name: The unsigned build
+        run: |
+          gh release download "$STAGING" --repo "$GITHUB_REPOSITORY" --dir unsigned \
+            --pattern "panorun-release-$VERSION.aab" --pattern "panorun-release-unsigned-$VERSION.apk"
+          ls -l unsigned
+
+      - name: Android's build-tools
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;36.0.0" > /dev/null
+          echo "TOOLS=$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_ENV"
+
+      - name: Sign
+        env:
+          PANORUN_ANDROID_SIGNING: ${{ secrets.PANORUN_ANDROID_SIGNING }}
+        run: |
+          bash site/.github/scripts/android-sign.sh "unsigned/panorun-release-$VERSION.aab" \
+            "unsigned/panorun-release-unsigned-$VERSION.apk" signed "$VERSION"
+          sizes=$(cd signed && ls -l Panorun-* | awk '{print $NF" "$5" bytes"}' | paste -sd ';' -)
+          echo "::notice title=Android signed::$sizes"
+
+      - name: Google Play
+        if: inputs.play
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ inputs.track }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/play"
+          "$RUNNER_TEMP/play/bin/pip" install --disable-pip-version-check -q google-auth requests
+          "$RUNNER_TEMP/play/bin/python" site/.github/scripts/play-upload.py "$PACKAGE" "signed/Panorun-$VERSION.aab" \
+            --track "$TRACK" --name "$VERSION" --notes "$RUNNER_TEMP/notes.txt" | tee "$RUNNER_TEMP/play.txt"
+          echo "::notice title=Google Play::$(tail -1 "$RUNNER_TEMP/play.txt")"
+
+      - name: The APK on Panorun's release
+        if: inputs.apk
+        run: |
+          # panorun-release.yml makes the release once Windows is built and
+          # tried: up to two hours.
+          for _ in $(seq 120); do
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 && break
+            sleep 60
+          done
+          gh release upload "$TAG" "signed/Panorun-$VERSION.apk" --repo "$GITHUB_REPOSITORY" --clobber
+          echo "::notice title=APK::Panorun-$VERSION.apk $(sha256sum "signed/Panorun-$VERSION.apk" | cut -d' ' -f1) on $TAG"
+
+      - name: The draft gone
+        run: gh release delete "$STAGING" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
