@@ -206,9 +206,11 @@ jobs:
             ~/.cargo/git/db
             C:\C\.ck
           # The build's environment too: Cargo doesn't notice whisper.cpp's
-          # settings in it (GGML_NATIVE).
-          key: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-${{ github.run_id }}
-          restore-keys: engine-windows-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-
+          # settings in it (GGML_NATIVE). And the Vulkan SDK's version, which
+          # "latest" changes: a build made against another SDK's path stopped
+          # in cargokit within a minute, with no engine (0.2.25, 2026-11-04).
+          key: engine-windows-vulkan-${{ env.VULKAN_VERSION }}-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-${{ github.run_id }}
+          restore-keys: engine-windows-vulkan-${{ env.VULKAN_VERSION }}-${{ hashFiles('cam2you/engine/Cargo.lock', 'cam2you/engine/scripts/env-windows.ps1') }}-
 
       # The app with the engine in it (CAM2YOU_ENGINE=1, set by the script),
       # against the same LGPL FFmpeg it bundles.
