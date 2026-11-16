@@ -157,7 +157,21 @@
   .download .next p { margin-bottom: 8px; }
   .download .next ol { padding-left: 24px; margin-bottom: 10px; }
   .download .next li { margin-bottom: 6px; color: #333; }
-  .download .testers { margin: 16px 0 0; }
+  .download .or { font-size: 15px; margin: 10px 0 14px; }
+  .play-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 2px solid #1a1a1a;
+  }
+  .play-badge:hover { background: #b50026; border-color: #b50026; color: #fff; }
+  .play-badge svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .play-badge-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+  .play-badge-line1 { font-size: 9px; letter-spacing: 0.05em; opacity: 0.85; text-transform: uppercase; }
+  .play-badge-line2 { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
   .download ul li { margin-bottom: 6px; }
 
   .video { display: block; position: relative; border: 2px solid #1a1a1a; line-height: 0; margin-top: 8px; }
@@ -218,6 +232,16 @@
     </div>
     <div class="system" id="android">
       <p class="platform">ANDROID 10 OR NEWER</p>
+      <p><a href="https://play.google.com/store/apps/details?id=com.tiegames.cam2you" class="play-badge" aria-label="Get Cam2You on Google Play">
+        <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+          <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+        </svg>
+        <span class="play-badge-text">
+          <span class="play-badge-line1">Get it on</span>
+          <span class="play-badge-line2">Google Play</span>
+        </span>
+      </a></p>
+      <p class="or">Google Play installs Cam2You and keeps it up to date. Or download the app file (APK) from this page:</p>
       <div class="inapp" id="inapp" hidden>
         <p><strong>Open this page in Chrome first.</strong> It is open inside another app (Telegram, WhatsApp, Gmail…), which can't download files: there the button below does nothing.</p>
         <p><a class="button" id="open-in-chrome" href="https://tie-games.com/cam2you/">Open in Chrome</a></p>
@@ -238,19 +262,8 @@
       <ul>
         <li>Open this page in your phone's browser (Chrome — not inside another app) and tap the button. When the download is finished, tap <em>Open</em> in the message at the bottom, then <em>Install</em>. Missed it? Chrome's <strong>&#8942;</strong> &rarr; <em>Downloads</em> has the file: tap it there.</li>
         <li>The first time, Android asks whether your browser may install apps: allow it, go back and tap <em>Install</em> again.</li>
-        <li>Cam2You isn't in the Play Store yet, so Google Play Protect may not know it: tap <em>More details</em>, then <em>Install anyway</em>.</li>
-        <li>Later Cam2You installs its new versions itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
+        <li>Later this copy installs its new versions itself: tap <em>Update</em> when it says one is out. You won't need this page again.</li>
       </ul>
-      <!-- Google Play's closed test: a new app is published there only after 12 testers have had it for 14 days. -->
-      <div class="next testers" id="play-test">
-        <p><strong>Help Cam2You into Google Play.</strong> Google publishes a new app only after at least 12 people have tested it for 14 days. To be one of them, with the Google account you use on your phone:</p>
-        <ol>
-          <li>Join the <a href="https://groups.google.com/g/cam2you-testers">Cam2You testers</a> group (<em>Join group</em>). We don't send mail through it.</li>
-          <li>Open <a href="https://play.google.com/apps/testing/com.tiegames.cam2you">the test's page</a> and tap <em>Become a tester</em>.</li>
-          <li>Install <a href="https://play.google.com/store/apps/details?id=com.tiegames.cam2you">Cam2You from Google Play</a> and keep it for at least 14 days. If Google Play won't install it over the copy from this page, uninstall that copy first.</li>
-        </ol>
-        <p>Tell us what works and what doesn't: <a href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a>.</p>
-      </div>
     </div>
     <div class="system" id="mac">
       <p class="platform">MACOS 12 OR NEWER, APPLE SILICON AND INTEL</p>
