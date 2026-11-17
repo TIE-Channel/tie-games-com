@@ -7,7 +7,7 @@ KEYS = ['Panorun - the whole level in view | TIE-Games',
  'everything you have scrolled past stays on screen around the game. Play together online, and '
  'your friends run beside you inside your own game. Panorun is made by TIE-Games, an independent '
  'studio in Dresden, Germany.',
- 'Have an Android phone? <a href="#test">Help test Panorun on Google Play</a>.',
+ 'Have an Android phone? <a href="https://play.google.com/store/apps/details?id=com.tiegames.panorun">Get Panorun on Google Play</a>.',
  'Download',
  'WINDOWS 10 AND 11, 64-BIT',
  'The installer asks where to install and whether to put a shortcut on the desktop. No '
@@ -23,17 +23,6 @@ KEYS = ['Panorun - the whole level in view | TIE-Games',
  '<a class="button" id="open-in-chrome" href="https://tie-games.com/panorun/">Open in Chrome</a>',
  'If nothing happens: tap <strong>&#8942;</strong> or <strong>&#8943;</strong> at the top, then '
  '<em>Open in Chrome</em> or <em>Open in browser</em>.',
- '<strong>Early access: Panorun is in its test on Google Play</strong> before it opens to '
- 'everyone, and anyone can join the test:',
- 'Join the group <a href="https://groups.google.com/g/panorun-testers">Panorun testers</a> with '
- 'your Google account: <em>Join group</em>.',
- 'Open <a href="https://play.google.com/apps/testing/com.tiegames.panorun">Panorun\'s test on '
- 'Google Play</a> and tap <em>Become a tester</em>.',
- 'Install Panorun with the Google Play button above.',
- 'Keep it for two weeks and play now and then - <em>TRY THE DEMO</em>, a game of your own, a room '
- "with others - and tell us what works and what doesn't, in the group or at <a "
- 'href="mailto:tie.games.info@gmail.com">tie.games.info@gmail.com</a>. Google Play opens Panorun '
- 'to everyone once enough testers have played it for two weeks.',
  'Or download it here:',
  '<strong>Downloading <span id="android-file">Panorun</span>&hellip;</strong> Give it a minute.',
  "When it's finished, tap <em>Open</em> in the message at the bottom of Chrome.",
